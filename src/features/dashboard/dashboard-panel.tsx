@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { dashboardMockByRange } from "@/api/dashboard";
 import type { DashboardPayload, TimeRange } from "@/types/dashboard";
-import { ErrorState } from "@/features/dashboard/error-state";
 import { FeedbackRatio } from "@/features/dashboard/feedback-ratio";
 import { KeywordList } from "@/features/dashboard/keyword-list";
 import { MetricCard } from "@/features/dashboard/metric-card";
@@ -17,12 +16,7 @@ type DashboardPanelProps = {
 
 export function DashboardPanel({ data }: DashboardPanelProps) {
   const [selectedRange, setSelectedRange] = useState<TimeRange>(data.selectedRange);
-  const [showError, setShowError] = useState(false);
   const selectedData = dashboardMockByRange[selectedRange];
-
-  const toggleErrorState = () => {
-    setShowError((current) => !current);
-  };
 
   return (
     <div className="dashboard-grid">
@@ -32,26 +26,17 @@ export function DashboardPanel({ data }: DashboardPanelProps) {
           actions={
             <div className="dashboard-header-actions">
               <TimeRangeTabs value={selectedRange} onChange={setSelectedRange} />
-              <button type="button" className="secondary-button" onClick={toggleErrorState}>
-                {showError ? "정상 보기" : "오류 보기"}
-              </button>
             </div>
           }
         />
 
-        {showError ? (
-          <ErrorState onRetry={() => setShowError(false)} />
-        ) : (
-          <>
-            <div className="metric-card-grid">
-              {selectedData.metrics.map((metric) => (
-                <MetricCard key={metric.key} metric={metric} />
-              ))}
-            </div>
+        <div className="metric-card-grid">
+          {selectedData.metrics.map((metric) => (
+            <MetricCard key={metric.key} metric={metric} />
+          ))}
+        </div>
 
-            <TrendChart points={selectedData.trend} />
-          </>
-        )}
+        <TrendChart points={selectedData.trend} />
       </section>
 
       <section className="dashboard-side">

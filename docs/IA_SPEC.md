@@ -103,7 +103,6 @@
 - 추이 차트
 - 질문 키워드
 - 피드백 비율
-- 오류 보기 버튼
 
 #### 상태
 
@@ -120,7 +119,6 @@ dashboard-grid
 │  ├─ TimeRangeTabs
 │  ├─ metric-card-grid
 │  ├─ TrendChart
-│  └─ ErrorState
 └─ dashboard-side
    ├─ KeywordList
    └─ FeedbackRatio
@@ -314,4 +312,3 @@ accounts-layout
 
 - 현재 구현 기준으로 `/otp`는 별도 화면이 아니다.
 - `knowledge`는 MASTER와 OPERATOR가 모두 볼 수 있다.
-- 대시보드 오류 상태는 `ErrorState`로 교체된다.
