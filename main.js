@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
   const t = document.createElement("link").relList;
   if (t && t.supports && t.supports("modulepreload")) return;
   for (const n of document.querySelectorAll('link[rel="modulepreload"]')) a(n);
@@ -11919,7 +11919,7 @@ const su = "xperp-mock-auth-stage",
   },
   Bc = (e) => e.replace(/[^A-Za-z0-9]/g, "").slice(0, Dh),
   hr = (e) => e.replace(/[^A-Za-z0-9]/g, "").slice(0, Ch);
-function Gv({ onAuthenticated: e }) {
+function AuthScreen({ onAuthenticated: e }) {
   const [t, l] = j.useState(Vv),
     [a, n] = j.useState(""),
     [u, i] = j.useState(""),
@@ -12293,7 +12293,7 @@ const Ul = (e, t, l) => {
       })),
     };
   },
-  Yi = {
+  DASHBOARD_SECTIONS = {
     DAY: {
       selectedRange: "DAY",
       metrics: [
@@ -12523,7 +12523,7 @@ const Ul = (e, t, l) => {
       },
     },
   };
-function nt({ title: e, actions: t, className: l, titleAs: a = "h2" }) {
+function SectionHeader({ title: e, actions: t, className: l, titleAs: a = "h2" }) {
   const n = a;
   return c.jsxs("div", {
     className: `section-header${l ? ` ${l}` : ""}`,
@@ -12546,11 +12546,11 @@ const mr = (e) =>
       .replace(/[^0-9a-z가-힣]/gi, ""),
   Bu = (e, t) => t.localeCompare(e),
   fu = (e) => (Number.isInteger(e) ? `${e}%` : `${e.toFixed(1)}%`);
-function Rh({ title: e, items: t, bare: l }) {
+function KeywordList({ title: e, items: t, bare: l }) {
   return c.jsxs("section", {
     className: `dashboard-keyword-card${l ? " dashboard-keyword-card--bare" : ""}`,
     children: [
-      c.jsx(nt, { title: e, className: "dashboard-keyword-card__header" }),
+      c.jsx(SectionHeader, { title: e, className: "dashboard-keyword-card__header" }),
       t.length === 0
         ? c.jsx("div", {
             className: "dashboard-keyword-empty",
@@ -12629,7 +12629,7 @@ const Yc = {
       "Z",
     ].join(" ");
   };
-function Xv({ data: e }) {
+function FeedbackRatio({ data: e }) {
   const [t, l] = j.useState(e.defaultReaction),
     [a, n] = j.useState(null),
     u = (e.positive.count / e.totalCount) * 100,
@@ -12647,7 +12647,7 @@ function Xv({ data: e }) {
   return c.jsxs("section", {
     className: "panel panel--side feedback-ratio-card",
     children: [
-      c.jsx(nt, {
+      c.jsx(SectionHeader, {
         title: "피드백 비율",
         className: "feedback-ratio-card__header",
       }),
@@ -12685,7 +12685,7 @@ function Xv({ data: e }) {
                   }),
                   c.jsx("circle", {
                     cx: ct,
-                    cy: ct,
+                    cacheQaRecords: ct,
                     r: La,
                     className: "feedback-ratio__hole",
                   }),
@@ -12746,7 +12746,7 @@ function Xv({ data: e }) {
               );
             }),
           }),
-          c.jsx(Rh, {
+          c.jsx(KeywordList, {
             title: b,
             items: t === "POSITIVE" ? e.positive.keywords : e.negative.keywords,
             bare: !0,
@@ -12756,7 +12756,7 @@ function Xv({ data: e }) {
     ],
   });
 }
-function Zv({ metric: e }) {
+function MetricCard({ metric: e }) {
   const t = e.compareDirection === "UP" ? "+" : "-",
     l = e.compareDirection === "UP" ? "is-up" : "is-down";
   return c.jsxs("article", {
@@ -12783,7 +12783,7 @@ const kv = {
     MONTH: { label: "월간", note: "이번달 기준 7달" },
   },
   Kv = ["DAY", "WEEK", "MONTH"];
-function Jv({ value: e, onChange: t }) {
+function TimeRangeTabs({ value: e, onChange: t }) {
   return c.jsx("div", {
     className: "time-range-tabs",
     role: "tablist",
@@ -12826,7 +12826,7 @@ const wc = 760,
           ].join(" ")
       : "";
   };
-function Fv({ points: e }) {
+function TrendChart({ points: e }) {
   const [t, l] = j.useState(null),
     a = Math.max(...e.map((y) => y.visitors), 1),
     n = Math.max(...e.map((y) => y.inquiries), 1),
@@ -12960,13 +12960,13 @@ function Fv({ points: e }) {
                     children: [
                       c.jsx("circle", {
                         cx: y.x,
-                        cy: y.inquiryY,
+                        cacheQaRecords: y.inquiryY,
                         r: "5",
                         className: "trend-chart__point",
                       }),
                       c.jsx("circle", {
                         cx: y.x,
-                        cy: y.inquiryY,
+                        cacheQaRecords: y.inquiryY,
                         r: "10",
                         fill: "transparent",
                       }),
@@ -13023,40 +13023,40 @@ function Fv({ points: e }) {
     ],
   });
 }
-function gr({ data: e }) {
+function DashboardView({ data: e }) {
   const [t, l] = j.useState(e.selectedRange),
-    a = Yi[t];
+    a = DASHBOARD_SECTIONS[t];
   return c.jsxs("div", {
     className: "dashboard-grid",
     children: [
       c.jsxs("section", {
         className: "panel panel--main",
         children: [
-          c.jsx(nt, {
+          c.jsx(SectionHeader, {
             title: "기간별 지표 현황",
             actions: c.jsx("div", {
               className: "dashboard-header-actions",
-              children: c.jsx(Jv, { value: t, onChange: l }),
+              children: c.jsx(TimeRangeTabs, { value: t, onChange: l }),
             }),
           }),
           c.jsx("div", {
             className: "metric-card-grid",
-            children: a.metrics.map((n) => c.jsx(Zv, { metric: n }, n.key)),
+            children: a.metrics.map((n) => c.jsx(MetricCard, { metric: n }, n.key)),
           }),
-          c.jsx(Fv, { points: a.trend }),
+          c.jsx(TrendChart, { points: a.trend }),
         ],
       }),
       c.jsxs("section", {
         className: "dashboard-side",
         children: [
-          c.jsx(Rh, { title: "질문 키워드", items: e.fixedKeywords }),
-          c.jsx(Xv, { data: e.fixedFeedbackRatio }),
+          c.jsx(KeywordList, { title: "질문 키워드", items: e.fixedKeywords }),
+          c.jsx(FeedbackRatio, { data: e.fixedFeedbackRatio }),
         ],
       }),
     ],
   });
 }
-const Iv = [
+const contentDocuments = [
   {
     id: "doc-001",
     name: "챗봇 운영 매뉴얼",
@@ -13154,7 +13154,7 @@ const Iv = [
     ],
   },
 ];
-async function Pv(e) {
+async function createContentDocument(e) {
   return {
     id: `doc-${Date.now()}`,
     name: e.fileName.replace(/\.[^.]+$/, ""),
@@ -13178,7 +13178,7 @@ async function Pv(e) {
     ],
   };
 }
-function Mn({
+function DetailFrame({
   title: e,
   actions: t,
   children: l,
@@ -13189,7 +13189,7 @@ function Mn({
   return c.jsxs("section", {
     className: `detail-frame${a ? ` ${a}` : ""}`,
     children: [
-      c.jsx(nt, {
+      c.jsx(SectionHeader, {
         title: e,
         actions: t,
         className: "detail-frame__header",
@@ -13202,7 +13202,7 @@ function Mn({
     ],
   });
 }
-function Bs({ items: e }) {
+function ToastStack({ items: e }) {
   return e.length === 0
     ? null
     : c.jsx("div", {
@@ -13237,20 +13237,20 @@ function yn(e = 3e3) {
     }, []);
   return { message: t, showMessage: a, clearMessage: n };
 }
-const ey = [
+const contentTypeOptions = [
     { label: "전체", value: "ALL" },
     { label: "매뉴얼", value: "MANUAL" },
     { label: "FAQ", value: "FAQ" },
   ],
-  pr = { ACTIVE: "정상", FAILED: "실패" },
+  contentStatusLabels = { ACTIVE: "정상", FAILED: "실패" },
   Qc = { fileName: "", path: "", type: "MANUAL" },
-  ty = ".pdf,.docx,.txt,.md",
-  _r = 3e3,
-  Ca = (e, t) => Bu(e.updatedAt, t.updatedAt) || Bu(e.createdAt, t.createdAt);
-function ly({ documents: e }) {
+  allowedFileExtensions = ".pdf,.docx,.txt,.md",
+  messageDurationMs = 3e3,
+  sortContentDocuments = (e, t) => Bu(e.updatedAt, t.updatedAt) || Bu(e.createdAt, t.createdAt);
+function ContentManagementView({ documents: e }) {
   var Z, ue;
   const t = j.useRef(null),
-    l = e.slice().sort(Ca),
+    l = e.slice().sort(sortContentDocuments),
     [a, n] = j.useState({ keyword: "", type: "ALL" }),
     [u, i] = j.useState(""),
     [s, f] = j.useState(() => l),
@@ -13259,8 +13259,8 @@ function ly({ documents: e }) {
     [m, A] = j.useState(!1),
     [N, R] = j.useState("CREATE"),
     [o, d] = j.useState(null),
-    v = yn(_r),
-    g = yn(_r),
+    v = yn(messageDurationMs),
+    g = yn(messageDurationMs),
     [E, C] = j.useState(""),
     [T, D] = j.useState(Qc),
     S = j.useMemo(() => {
@@ -13274,7 +13274,7 @@ function ly({ documents: e }) {
             Pe = a.type === "ALL" || X.type === a.type;
           return il && Pe;
         })
-        .sort(Ca);
+        .sort(sortContentDocuments);
     }, [a.keyword, a.type, s]),
     _ = S.find((M) => M.id === r) ?? S[0] ?? null,
     te =
@@ -13314,13 +13314,13 @@ function ly({ documents: e }) {
         g.showMessage("파일과 경로를 모두 입력해 주세요.");
         return;
       }
-      const M = await Pv(T),
+      const M = await createContentDocument(T),
         X = new Date().toLocaleString("sv-SE").slice(0, 16).replace("T", " ");
       if (N === "CREATE" || !o) {
         const Pe = [
           { ...M, status: "ACTIVE", createdAt: X, updatedAt: X },
           ...s,
-        ].sort(Ca);
+        ].sort(sortContentDocuments);
         (f(Pe), b(M.id), v.showMessage("문서 업로드가 완료되었습니다."));
       } else
         (f((il) =>
@@ -13342,14 +13342,14 @@ function ly({ documents: e }) {
                     version: Hh,
                     actor: "관리자",
                     action: "수정",
-                    reason: "기존 문서 수정 업로드",
+                    reason: "기존 문서 수정",
                     occurredAt: X,
                   },
                   ...Pe.history,
                 ],
               };
             })
-            .sort(Ca),
+            .sort(sortContentDocuments),
         ),
           b(o),
           v.showMessage("문서가 수정되었습니다."));
@@ -13359,7 +13359,7 @@ function ly({ documents: e }) {
       _ &&
         (f((M) => {
           var il;
-          const X = M.filter((Pe) => Pe.id !== _.id).sort(Ca);
+          const X = M.filter((Pe) => Pe.id !== _.id).sort(sortContentDocuments);
           return (b(((il = X[0]) == null ? void 0 : il.id) ?? ""), X);
         }),
         A(!1),
@@ -13386,14 +13386,14 @@ function ly({ documents: e }) {
   return c.jsxs("div", {
     className: "page-content page-content--fill content-page",
     children: [
-      c.jsx(Bs, { items: Y }),
+      c.jsx(ToastStack, { items: Y }),
       c.jsxs("div", {
         className: "content-grid",
         children: [
           c.jsxs("section", {
             className: "content-table-card",
             children: [
-              c.jsx(nt, {
+              c.jsx(SectionHeader, {
                 title: "문서 목록",
                 actions: c.jsx("button", {
                   type: "button",
@@ -13424,7 +13424,7 @@ function ly({ documents: e }) {
                         value: a.type,
                         onChange: (M) =>
                           n((X) => ({ ...X, type: M.target.value })),
-                        children: ey.map((M) =>
+                        children: contentTypeOptions.map((M) =>
                           c.jsx(
                             "option",
                             { value: M.value, children: M.label },
@@ -13528,7 +13528,7 @@ function ly({ documents: e }) {
                                     c.jsx("td", {
                                       children: c.jsx("span", {
                                         className: `status-badge status-badge--${M.status.toLowerCase()}`,
-                                        children: pr[M.status],
+                                        children: contentStatusLabels[M.status],
                                       }),
                                     }),
                                   ],
@@ -13542,13 +13542,13 @@ function ly({ documents: e }) {
               }),
             ],
           }),
-          c.jsx(Mn, {
+          c.jsx(DetailFrame, {
             className: "content-detail-card",
             title: "문서 상세",
             actions: _
               ? c.jsx("span", {
                   className: `status-badge status-badge--${_.status.toLowerCase()}`,
-                  children: pr[_.status],
+                  children: contentStatusLabels[_.status],
                 })
               : null,
             children: _
@@ -13713,7 +13713,7 @@ function ly({ documents: e }) {
                     ref: t,
                     className: "field__input content-file-input",
                     type: "file",
-                    accept: ty,
+                    accept: allowedFileExtensions,
                     onChange: (M) => {
                       var X;
                       return O((X = M.target.files) == null ? void 0 : X[0]);
@@ -13793,7 +13793,7 @@ function ly({ documents: e }) {
     ],
   });
 }
-function ay({
+function ListPanel({
   title: e,
   actions: t,
   toolbar: l,
@@ -13804,7 +13804,7 @@ function ay({
   return c.jsxs("section", {
     className: `list-panel${n ? ` ${n}` : ""}`,
     children: [
-      c.jsx(nt, { title: e, actions: t, className: "list-panel__header" }),
+      c.jsx(SectionHeader, { title: e, actions: t, className: "list-panel__header" }),
       l
         ? c.jsx("div", { className: "list-panel__toolbar", children: l })
         : null,
@@ -13822,7 +13822,7 @@ function ny(e, t) {
   for (let u = a; u <= n; u += 1) l.push(u);
   return (e < t - 3 && l.push(null), l.push(t), l);
 }
-function uy({ page: e, totalPages: t, onChange: l }) {
+function Pagination({ page: e, totalPages: t, onChange: l }) {
   const a = Math.max(1, t),
     n = Math.min(Math.max(e, 1), a),
     u = ny(n, a);
@@ -13872,7 +13872,7 @@ function uy({ page: e, totalPages: t, onChange: l }) {
 }
 const Ys = () =>
     new Date().toLocaleString("sv-SE").slice(0, 16).replace("T", " "),
-  cy = [
+  cacheQaRecords = [
     {
       id: "cache-001",
       question: "배송은 언제 도착하나요?",
@@ -14057,7 +14057,7 @@ const Ys = () =>
       }
     return 1 - n[l.length][a.length] / Math.max(l.length, a.length);
   },
-  sy = (e, t, l) => {
+  findCacheQaDuplicate = (e, t, l) => {
     let n = null;
     for (const u of e) {
       if (l && u.id === l) continue;
@@ -14070,7 +14070,7 @@ const Ys = () =>
     }
     return n;
   },
-  fy = async (e, t = "관리자") => {
+  createCacheQaEntry = async (e, t = "관리자") => {
     const l = Ys();
     return {
       id: `cache-${Date.now()}`,
@@ -14085,7 +14085,7 @@ const Ys = () =>
       lastMatchedAt: null,
     };
   },
-  ry = async (e, t, l = "관리자") => {
+  updateCacheQaEntry = async (e, t, l = "관리자") => {
     const a = Ys();
     return {
       ...e,
@@ -14096,7 +14096,7 @@ const Ys = () =>
       updatedBy: l,
     };
   },
-  oy = async (e, t, l = "관리자") => {
+  toggleCacheQaEntryStatus = async (e, t, l = "관리자") => {
     const a = Ys();
     return { ...e, status: t, updatedAt: a, updatedBy: l };
   },
@@ -14112,7 +14112,7 @@ const Ys = () =>
   ],
   Hl = { question: "", answer: "", status: "ACTIVE" },
   ql = (e, t) => Bu(e.createdAt, t.createdAt);
-function hy({ items: e }) {
+function CacheAnswerManagementView({ items: e }) {
   var $;
   const [t, l] = j.useState(e.slice().sort(ql)),
     [a, n] = j.useState({ keyword: "", status: "ALL" }),
@@ -14196,12 +14196,12 @@ function hy({ items: e }) {
         g.showMessage("질문과 답변을 모두 입력해 주세요.");
         return;
       }
-      if (sy(t, o.question.trim(), N ?? void 0)) {
+      if (findCacheQaDuplicate(t, o.question.trim(), N ?? void 0)) {
         g.showMessage("유사한 질문이 이미 등록되어 있습니다.");
         return;
       }
       if (m === "CREATE") {
-        const ue = await fy(o);
+        const ue = await createCacheQaEntry(o);
         (l((M) => [ue, ...M].sort(ql)),
           f(ue.id),
           v.showMessage("답변이 등록되었습니다."),
@@ -14218,7 +14218,7 @@ function hy({ items: e }) {
         g.showMessage("수정 대상이 존재하지 않습니다.");
         return;
       }
-      const Z = await ry(Y, o);
+      const Z = await updateCacheQaEntry(Y, o);
       (l((ue) => ue.map((M) => (M.id === N ? Z : M)).sort(ql)),
         f(Z.id),
         v.showMessage("답변이 수정되었습니다."),
@@ -14230,7 +14230,7 @@ function hy({ items: e }) {
     z = async () => {
       if (!_) return;
       const O = _.status === "ACTIVE" ? "INACTIVE" : "ACTIVE",
-        Y = await oy(_, O);
+        Y = await toggleCacheQaEntryStatus(_, O);
       (l((Z) => Z.map((ue) => (ue.id === Y.id ? Y : ue)).sort(ql)),
         f(Y.id),
         v.showMessage(
@@ -14255,7 +14255,7 @@ function hy({ items: e }) {
   return c.jsxs("div", {
     className: "cache-qa-layout",
     children: [
-      c.jsx(Bs, {
+      c.jsx(ToastStack, {
         items: [
           v.message
             ? { key: "cache-qa-success", tone: "success", message: v.message }
@@ -14268,14 +14268,14 @@ function hy({ items: e }) {
       c.jsxs("div", {
         className: "cache-qa-grid",
         children: [
-          c.jsx(ay, {
+          c.jsx(ListPanel, {
             className: "cache-qa-list-card",
-            title: "답변 목록",
+            title: "캐시 답변 목록",
             actions: c.jsx("button", {
               type: "button",
               className: "primary-button",
               onClick: te,
-              children: "답변 등록",
+              children: "캐시 답변 등록",
             }),
             toolbar: c.jsxs("form", {
               className: "cache-qa-toolbar",
@@ -14340,7 +14340,7 @@ function hy({ items: e }) {
                 }),
               ],
             }),
-            footer: c.jsx(uy, { page: r, totalPages: D, onChange: b }),
+            footer: c.jsx(Pagination, { page: r, totalPages: D, onChange: b }),
             children: c.jsx("div", {
               className: "list-panel__scroll cache-qa-list-scroll",
               children:
@@ -14399,7 +14399,7 @@ function hy({ items: e }) {
           }),
           c.jsx("aside", {
             className: "cache-qa-side",
-            children: c.jsx(Mn, {
+            children: c.jsx(DetailFrame, {
               className: "cache-qa-detail-card",
               title: "상세 정보",
               actions: _
@@ -14528,8 +14528,8 @@ function hy({ items: e }) {
       }),
       y
         ? c.jsx(nl, {
-            title: m === "EDIT" ? "답변 수정" : "답변 등록",
-            ariaLabel: m === "EDIT" ? "답변 수정" : "답변 등록",
+            title: m === "EDIT" ? "캐시 답변 수정" : "캐시 답변 등록",
+            ariaLabel: m === "EDIT" ? "캐시 답변 수정" : "캐시 답변 등록",
             onClose: Q,
             size: "xl",
             footerClassName: "modal__footer--split",
@@ -14567,7 +14567,7 @@ function hy({ items: e }) {
                       rows: 3,
                       maxLength: Sr,
                       value: o.question,
-                      placeholder: "캐시 응답용 질문을 입력해 주세요.",
+                      placeholder: "캐시 답변용 질문을 입력해 주세요.",
                       onChange: (O) =>
                         d((Y) => ({ ...Y, question: O.target.value })),
                     }),
@@ -14590,7 +14590,7 @@ function hy({ items: e }) {
                       rows: 6,
                       maxLength: Ar,
                       value: o.answer,
-                      placeholder: "캐시 응답으로 반환할 답변을 입력해 주세요.",
+                      placeholder: "캐시 답변으로 반환할 답변을 입력해 주세요.",
                       onChange: (O) =>
                         d((Y) => ({ ...Y, answer: O.target.value })),
                     }),
@@ -14634,8 +14634,8 @@ function hy({ items: e }) {
         : null,
       E
         ? c.jsx(nl, {
-            title: "답변 삭제 확인",
-            ariaLabel: "답변 삭제 확인",
+            title: "캐시 답변 삭제 확인",
+            ariaLabel: "캐시 답변 삭제 확인",
             onClose: () => C(!1),
             size: "sm",
             compact: !0,
@@ -14658,14 +14658,14 @@ function hy({ items: e }) {
             }),
             children: c.jsx("p", {
               className: "content-confirm",
-              children: "선택한 답변을 삭제하면 캐시 응답에서 즉시 제외됩니다.",
+              children: "선택한 답변을 삭제하면 캐시 답변에서 즉시 제외됩니다.",
             }),
           })
         : null,
     ],
   });
 }
-const zh = [
+const knowledgeDocuments = [
   {
     id: "kdoc-001",
     name: "챗봇 운영 매뉴얼",
@@ -14691,11 +14691,11 @@ const zh = [
     path: "/rag/faq/vehicle-registration",
   },
 ];
-async function my() {
-  return { documents: zh };
+async function loadKnowledgeDocuments() {
+  return { documents: knowledgeDocuments };
 }
-async function vy(e) {
-  const t = zh.find((l) => l.id === e.documentId);
+async function executeKnowledgeQuery(e) {
+  const t = knowledgeDocuments.find((l) => l.id === e.documentId);
   return t
     ? {
         answer: `"${e.question}"에 대한 응답입니다.선택하신 문서(${t.name})를 기반으로 관련 내용을 조회한 결과, 해당 내용에 대한 예시 응답을 생성했습니다. 실제 API 연동 시에는 정확한 문맥을 기준으로 응답합니다.`,
@@ -14705,7 +14705,7 @@ async function vy(e) {
       }
     : null;
 }
-function yy({ documents: e }) {
+function KnowledgeQueryView({ documents: e }) {
   const [t, l] = j.useState({ question: "", documentType: "", documentId: "" }),
     [a, n] = j.useState("IDLE"),
     [u, i] = j.useState(null),
@@ -14722,7 +14722,7 @@ function yy({ documents: e }) {
     m = async () => {
       (n("LOADING"), i(null));
       try {
-        const o = await vy(t);
+        const o = await executeKnowledgeQuery(t);
         (n(o ? "SUCCESS" : "EMPTY"), o && i(o));
       } catch {
         n("ERROR");
@@ -14751,7 +14751,7 @@ function yy({ documents: e }) {
         c.jsxs("section", {
           className: "panel panel--main",
           children: [
-            c.jsx(nt, { title: "조회 조건" }),
+            c.jsx(SectionHeader, { title: "조회 조건" }),
             c.jsxs("div", {
               className: "knowledge-form",
               children: [
@@ -14848,7 +14848,7 @@ function yy({ documents: e }) {
             }),
           ],
         }),
-        c.jsxs(Mn, {
+        c.jsxs(DetailFrame, {
           className: "panel panel--main",
           title: "조회 결과",
           children: [
@@ -14941,7 +14941,7 @@ function yy({ documents: e }) {
     }),
   });
 }
-const Nr = { POSITIVE: "긍정", NEGATIVE: "부정" },
+const feedbackReactionLabels = { POSITIVE: "긍정", NEGATIVE: "부정" },
   by = [
     { label: "전체", value: "ALL" },
     { label: "긍정", value: "POSITIVE" },
@@ -14960,7 +14960,7 @@ const Nr = { POSITIVE: "긍정", NEGATIVE: "부정" },
       : !((a !== null && l < a) || (n !== null && l > n));
   },
   Sy = (e, t) => Bu(e.createdAt, t.createdAt);
-function Ay({ feedbacks: e }) {
+function FeedbackManagementView({ feedbacks: e }) {
   const [t, l] = j.useState({ reaction: "ALL" }),
     [a, n] = j.useState({ startDate: "", endDate: "" }),
     [u, i] = j.useState({ startDate: "", endDate: "" }),
@@ -14990,7 +14990,7 @@ function Ay({ feedbacks: e }) {
         c.jsxs("section", {
           className: "feedback-list-card",
           children: [
-            c.jsx(nt, {
+            c.jsx(SectionHeader, {
               title: "피드백 목록",
               className: "feedback-list-header",
             }),
@@ -15127,7 +15127,7 @@ function Ay({ feedbacks: e }) {
                                   c.jsx("td", {
                                     children: c.jsx("span", {
                                       className: `feedback-reaction-badge feedback-reaction-badge--${m.reaction.toLowerCase()}`,
-                                      children: Nr[m.reaction],
+                                      children: feedbackReactionLabels[m.reaction],
                                     }),
                                   }),
                                   c.jsx("td", {
@@ -15146,13 +15146,13 @@ function Ay({ feedbacks: e }) {
             }),
           ],
         }),
-        c.jsx(Mn, {
+        c.jsx(DetailFrame, {
           className: "feedback-detail-card",
           title: "피드백 상세",
           actions: b
             ? c.jsx("span", {
                 className: `feedback-reaction-badge feedback-reaction-badge--${b.reaction.toLowerCase()}`,
-                children: Nr[b.reaction],
+                children: feedbackReactionLabels[b.reaction],
               })
             : null,
           children:
@@ -15164,7 +15164,7 @@ function Ay({ feedbacks: e }) {
               : c.jsxs("div", {
                   className: "feedback-detail-scroll",
                   children: [
-                    c.jsx(nt, {
+                    c.jsx(SectionHeader, {
                       title: c.jsxs("div", {
                         className: "feedback-detail-identity",
                         children: [
@@ -15233,7 +15233,7 @@ function Ay({ feedbacks: e }) {
     }),
   });
 }
-const jr = [
+const accountRecords = [
     {
       id: "chat1004",
       name: "박운영",
@@ -15331,12 +15331,12 @@ const jr = [
       ],
     },
   ],
-  Tr = [
+  candidateAccounts = [
     { id: "emp001", name: "정수진", complexCode: "COMPLEX-101" },
     { id: "emp002", name: "박현준", complexCode: "COMPLEX-205" },
     { id: "emp003", name: "한지원", complexCode: "COMPLEX-310" },
   ];
-function xy(e) {
+function calculateAccountStats(e) {
   return {
     total: e.filter((t) => t.status === "ACTIVE").length,
     masters: e.filter((t) => t.role === "MASTER" && t.status === "ACTIVE")
@@ -15346,20 +15346,20 @@ function xy(e) {
     inactive: e.filter((t) => t.status !== "ACTIVE").length,
   };
 }
-async function Ey() {
-  const e = xy(jr);
-  return { accounts: jr, stats: e };
+async function loadAccountData() {
+  const e = calculateAccountStats(accountRecords);
+  return { accounts: accountRecords, stats: e };
 }
-const Ny = "chat1004",
-  Or = { ACTIVE: "활성", INACTIVE: "비활성", LOCKED: "잠금" },
-  Mr = { MASTER: "MASTER", OPERATOR: "OPERATOR" },
-  Dr = {
+const CURRENT_ACCOUNT_ID = "chat1004",
+  accountStatusLabels = { ACTIVE: "활성", INACTIVE: "비활성", LOCKED: "잠금" },
+  accountRoleLabels = { MASTER: "MASTER", OPERATOR: "OPERATOR" },
+  accountActionLabels = {
     ACTIVATE: "권한 복구",
     DEACTIVATE: "권한 비활성화",
     UNLOCK: "잠금 해제",
   },
   jy = 3e3;
-function Ty({ accounts: e }) {
+function AccountPermissionManagementView({ accounts: e }) {
   const [t, l] = j.useState(e),
     [a, n] = j.useState(null),
     [u, i] = j.useState(null),
@@ -15384,13 +15384,13 @@ function Ty({ accounts: e }) {
     d = j.useMemo(() => {
       const S = y.trim().toLowerCase();
       return S
-        ? Tr.filter(
+        ? candidateAccounts.filter(
             (_) =>
               _.name.toLowerCase().includes(S) ||
               _.id.toLowerCase().includes(S) ||
               _.complexCode.toLowerCase().includes(S),
           )
-        : Tr;
+        : candidateAccounts;
     }, [y]),
     v = (S, _) => {
       (l((te) => te.map((De) => (De.id === S ? { ...De, status: _ } : De))),
@@ -15425,7 +15425,7 @@ function Ty({ accounts: e }) {
       };
       (l((_) => [..._, S]), E(), N.showMessage("관리자가 추가되었습니다."));
     },
-    T = (S) => S === Ny,
+    T = (S) => S === CURRENT_ACCOUNT_ID,
     D = [
       { label: "전체 활성", value: `${R.total}명` },
       { label: "MASTER", value: `${R.masters}명` },
@@ -15435,7 +15435,7 @@ function Ty({ accounts: e }) {
   return c.jsxs("div", {
     className: "accounts-layout",
     children: [
-      c.jsx(Bs, {
+      c.jsx(ToastStack, {
         items: N.message
           ? [{ key: "accounts-success", tone: "success", message: N.message }]
           : [],
@@ -15468,13 +15468,13 @@ function Ty({ accounts: e }) {
           c.jsxs("section", {
             className: "accounts-list-card",
             children: [
-              c.jsx(nt, {
-                title: "관리자 목록",
+              c.jsx(SectionHeader, {
+                title: "계정 목록",
                 actions: c.jsx("button", {
                   type: "button",
                   className: "primary-button",
                   onClick: () => f(!0),
-                  children: "관리자 추가",
+                  children: "계정 추가",
                 }),
                 className: "panel__header panel__header--compact",
               }),
@@ -15519,13 +15519,13 @@ function Ty({ accounts: e }) {
                               c.jsx("td", {
                                 children: c.jsx("span", {
                                   className: `status-badge ${S.role === "MASTER" ? "status-badge--active" : "status-badge--processing"}`,
-                                  children: Mr[S.role],
+                                  children: accountRoleLabels[S.role],
                                 }),
                               }),
                               c.jsx("td", {
                                 children: c.jsx("span", {
                                   className: `status-badge status-badge--${S.status.toLowerCase()}`,
-                                  children: Or[S.status],
+                                  children: accountStatusLabels[S.status],
                                 }),
                               }),
                               c.jsx("td", { children: S.lastLoginAt ?? "-" }),
@@ -15540,13 +15540,13 @@ function Ty({ accounts: e }) {
               }),
             ],
           }),
-          c.jsx(Mn, {
+          c.jsx(DetailFrame, {
             className: "accounts-detail-card",
-            title: "관리자 상세",
+            title: "계정 상세",
             actions: o
               ? c.jsx("span", {
                   className: `status-badge status-badge--${o.status.toLowerCase()}`,
-                  children: Or[o.status],
+                  children: accountStatusLabels[o.status],
                 })
               : null,
             children:
@@ -15558,7 +15558,7 @@ function Ty({ accounts: e }) {
                 : c.jsxs("div", {
                     className: "accounts-detail-scroll",
                     children: [
-                      c.jsx(nt, {
+                      c.jsx(SectionHeader, {
                         title: c.jsxs("div", {
                           className: "accounts-detail-identity",
                           children: [
@@ -15575,7 +15575,7 @@ function Ty({ accounts: e }) {
                                 }),
                                 c.jsx("span", {
                                   className: "accounts-detail-identity__role",
-                                  children: Mr[o.role],
+                                  children: accountRoleLabels[o.role],
                                 }),
                               ],
                             }),
@@ -15739,8 +15739,8 @@ function Ty({ accounts: e }) {
       }),
       u &&
         c.jsx(nl, {
-          title: Dr[u.type],
-          ariaLabel: Dr[u.type],
+          title: accountActionLabels[u.type],
+          ariaLabel: accountActionLabels[u.type],
           onClose: () => i(null),
           size: "sm",
           footer: c.jsxs(c.Fragment, {
@@ -15780,8 +15780,8 @@ function Ty({ accounts: e }) {
         }),
       s &&
         c.jsxs(nl, {
-          title: "관리자 추가",
-          ariaLabel: "관리자 추가",
+          title: "계정 추가",
+          ariaLabel: "계정 추가",
           onClose: E,
           size: "lg",
           footer: c.jsxs(c.Fragment, {
@@ -15807,7 +15807,7 @@ function Ty({ accounts: e }) {
               children: [
                 c.jsx("span", {
                   className: "field__label",
-                  children: "사용자 검색 (이름, 아이디, 단지코드)",
+                  children: "사용자 검색",
                 }),
                 c.jsx("input", {
                   className: "field__input",
@@ -15870,7 +15870,7 @@ function Ty({ accounts: e }) {
     ],
   });
 }
-const Uh = [
+const NAV_ITEMS = [
     {
       key: "dashboard",
       label: "대시보드",
@@ -15908,7 +15908,7 @@ const Uh = [
       roles: ["MASTER"],
     },
   ],
-  Cr = {
+  ROUTE_META = {
     "/": {
       title: "대시보드",
       description: "운영 현황을 한눈에 확인하는 메인 화면입니다.",
@@ -15939,7 +15939,7 @@ const Uh = [
       description: "캐시 응답과 질문을 단위로 관리하는 화면입니다.",
     },
   },
-  Oy = [
+  feedbackRecords = [
     {
       id: "fb-001",
       complexName: "한강 아파트",
@@ -16029,18 +16029,18 @@ const Uh = [
       negativeReason: null,
     },
   ];
-async function My() {
-  return Oy.slice().sort((e, t) => t.createdAt.localeCompare(e.createdAt));
+async function loadFeedbackItems() {
+  return feedbackRecords.slice().sort((e, t) => t.createdAt.localeCompare(e.createdAt));
 }
 const Dy = "xperp-mock-auth-stage",
   Rr = "xperp-mock-authenticated",
   Cy = "xperp-mock-auth-user",
   Ry = "xperp-mock-otp-failures",
   zy = "xperp-mock-otp-locked";
-function Uy({ currentPath: e, onNavigate: t, onLogout: l }) {
+function Sidebar({ currentPath: e, onNavigate: t, onLogout: l }) {
   const [a, n] = j.useState(!1),
     u = Mh(),
-    i = Uh.filter((f) => f.roles.includes(u.role)),
+    i = NAV_ITEMS.filter((f) => f.roles.includes(u.role)),
     s = () => {
       (typeof window < "u" &&
         (window.sessionStorage.removeItem(Dy),
@@ -16151,7 +16151,7 @@ function Uy({ currentPath: e, onNavigate: t, onLogout: l }) {
     ],
   });
 }
-function Hy({ title: e, description: t, rightSlot: l }) {
+function TopHeader({ title: e, description: t, rightSlot: l }) {
   return c.jsxs("header", {
     className: "top-header",
     children: [
@@ -16168,18 +16168,18 @@ function Hy({ title: e, description: t, rightSlot: l }) {
     ],
   });
 }
-function qy({ currentPath: e, onNavigate: t, onLogout: l }) {
+function DashboardShell({ currentPath: e, onNavigate: t, onLogout: l }) {
   const a = Mh(),
-    n = Cr[e] ?? Cr["/dashboard"],
+    n = ROUTE_META[e] ?? ROUTE_META["/dashboard"],
     u = j.useMemo(
-      () => Uh.filter((r) => r.roles.includes(a.role)).map((r) => r.href),
+      () => NAV_ITEMS.filter((r) => r.roles.includes(a.role)).map((r) => r.href),
       [a.role],
     ),
     [i, s] = j.useState(null);
   (j.useEffect(() => {
     let r = !0;
     return (
-      Promise.all([My(), Ey(), my()]).then(([b, y, h]) => {
+      Promise.all([loadFeedbackItems(), loadAccountData(), my()]).then(([b, y, h]) => {
         r &&
           s({
             feedbacks: b,
@@ -16198,42 +16198,42 @@ function qy({ currentPath: e, onNavigate: t, onLogout: l }) {
   const f = () => {
     switch (e) {
       case "/dashboard":
-        return c.jsx(gr, { data: Yi.WEEK });
+        return c.jsx(DashboardView, { data: DASHBOARD_SECTIONS.WEEK });
       case "/content":
-        return c.jsx(ly, { documents: Iv });
+        return c.jsx(ContentManagementView, { documents: contentDocuments });
       case "/cache-qa":
-        return c.jsx(hy, { items: cy });
+        return c.jsx(CacheAnswerManagementView, { items: cacheQaRecords });
       case "/knowledge":
         return i
-          ? c.jsx(yy, { documents: i.knowledgeDocuments })
-          : c.jsx(Zc, { label: "지식 기반 조회" });
+          ? c.jsx(KnowledgeQueryView, { documents: i.knowledgeDocuments })
+          : c.jsx(LoadingPlaceholder, { label: "지식 기반 조회" });
       case "/feedback":
         return i
-          ? c.jsx(Ay, { feedbacks: i.feedbacks })
-          : c.jsx(Zc, { label: "피드백 관리" });
+          ? c.jsx(FeedbackManagementView, { feedbacks: i.feedbacks })
+          : c.jsx(LoadingPlaceholder, { label: "피드백 관리" });
       case "/accounts":
         return i
-          ? c.jsx(Ty, { accounts: i.accounts })
-          : c.jsx(Zc, { label: "계정/권한 관리" });
+          ? c.jsx(AccountPermissionManagementView, { accounts: i.accounts })
+          : c.jsx(LoadingPlaceholder, { label: "계정/권한 관리" });
       default:
-        return c.jsx(gr, { data: Yi.WEEK });
+        return c.jsx(DashboardView, { data: DASHBOARD_SECTIONS.WEEK });
     }
   };
   return c.jsxs("div", {
     className: "admin-shell",
     children: [
-      c.jsx(Uy, { currentPath: e, onNavigate: t, onLogout: l }),
+      c.jsx(Sidebar, { currentPath: e, onNavigate: t, onLogout: l }),
       c.jsxs("div", {
         className: "admin-shell__main",
         children: [
-          c.jsx(Hy, { title: n.title, description: n.description }),
+          c.jsx(TopHeader, { title: n.title, description: n.description }),
           c.jsx("main", { className: "admin-shell__content", children: f() }),
         ],
       }),
     ],
   });
 }
-function Zc({ label: e }) {
+function LoadingPlaceholder({ label: e }) {
   return c.jsx("section", {
     className: "panel panel--main",
     children: c.jsxs("div", {
@@ -16242,12 +16242,12 @@ function Zc({ label: e }) {
     }),
   });
 }
-const Ly = "authenticated";
-function By() {
+const AUTHENTICATED_STATUS = "authenticated";
+function App() {
   const [e, t] = j.useState(!1),
     [l, a] = j.useState("/dashboard");
   j.useEffect(() => {
-    typeof window > "u" || t(window.sessionStorage.getItem(su) === Ly);
+    typeof window > "u" || t(window.sessionStorage.getItem(su) === AUTHENTICATED_STATUS);
   }, []);
   const n = () => {
       (t(!0), a("/dashboard"));
@@ -16256,9 +16256,9 @@ function By() {
       (t(!1), a("/dashboard"));
     };
   return e
-    ? c.jsx(qy, { currentPath: l, onNavigate: a, onLogout: u })
-    : c.jsx(Gv, { onAuthenticated: n });
+    ? c.jsx(DashboardShell, { currentPath: l, onNavigate: a, onLogout: u })
+    : c.jsx(AuthScreen, { onAuthenticated: n });
 }
 zv.createRoot(document.getElementById("root")).render(
-  c.jsx(Ph.StrictMode, { children: c.jsx(By, {}) }),
+  c.jsx(Ph.StrictMode, { children: c.jsx(App, {}) }),
 );
