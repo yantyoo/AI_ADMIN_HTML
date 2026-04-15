@@ -1,7 +1,7 @@
-﻿const MINI_ELEMENT_TYPE = Symbol.for("react.transitional.element");
+const MINI_ELEMENT_TYPE = Symbol.for("react.transitional.element");
 const MINI_FRAGMENT = Symbol.for("react.fragment");
 const MINI_STRICT = Symbol.for("react.strict_mode");
-const c = {
+const miniJsxRuntime = {
   jsx(type, props, key) {
     return {
       $$typeof: MINI_ELEMENT_TYPE,
@@ -22,8 +22,8 @@ const c = {
   },
   Fragment: MINI_FRAGMENT,
 };
-const Ph = { StrictMode: MINI_STRICT, Fragment: MINI_FRAGMENT };
-const $r = {
+const miniReactRuntime = { StrictMode: MINI_STRICT, Fragment: MINI_FRAGMENT };
+const miniPortalRuntime = {
   createPortal(children, containerInfo) {
     return {
       $$typeof: Symbol.for("react.portal"),
@@ -34,7 +34,7 @@ const $r = {
     };
   },
 };
-const j = {
+const miniHookRuntime = {
   useState() {
     throw new Error("mini runtime not initialized");
   },
@@ -54,16 +54,21 @@ const j = {
     throw new Error("mini runtime not initialized");
   },
 };
-const zv = { createRoot() { return { render() {} }; } };
-function Oh({ children: e, backdropClassName: t, onBackdropClick: l }) {
-  const [a, n] = j.useState(!1);
+const miniRendererRuntime = { createRoot() { return { render() {} }; } };
+const jsxRuntime = miniJsxRuntime;
+const reactRuntime = miniReactRuntime;
+const portalRuntime = miniPortalRuntime;
+const hookRuntime = miniHookRuntime;
+const rendererRuntime = miniRendererRuntime;
+function ModalBackdropPortal({ children: e, backdropClassName: t, onBackdropClick: l }) {
+  const [a, n] = hookRuntime.useState(!1);
   return (
-    j.useEffect(() => {
+    hookRuntime.useEffect(() => {
       n(!0);
     }, []),
     a
-      ? $r.createPortal(
-          c.jsx("div", {
+      ? portalRuntime.createPortal(
+          jsxRuntime.jsx("div", {
             className: t ? `modal-backdrop ${t}` : "modal-backdrop",
             role: "presentation",
             onClick: l,
@@ -74,7 +79,7 @@ function Oh({ children: e, backdropClassName: t, onBackdropClick: l }) {
       : null
   );
 }
-function nl({
+function ModalDialog({
   title: e,
   children: t,
   onClose: l,
@@ -89,31 +94,31 @@ function nl({
   footerClassName: y,
   ariaLabel: h,
 }) {
-  return c.jsx(Oh, {
+  return jsxRuntime.jsx(ModalBackdropPortal, {
     backdropClassName: s,
     onBackdropClick: l,
-    children: c.jsxs("section", {
+    children: jsxRuntime.jsxs("section", {
       className: `modal modal--${u}${i ? " modal--compact" : ""}${f ? ` ${f}` : ""}`,
       role: "dialog",
       "aria-modal": "true",
       "aria-label": h,
       onClick: (m) => m.stopPropagation(),
       children: [
-        c.jsx("div", {
+        jsxRuntime.jsx("div", {
           className: `modal__header${b ? ` ${b}` : ""}`,
-          children: c.jsxs("div", {
+          children: jsxRuntime.jsxs("div", {
             children: [
-              c.jsx("h3", { children: e }),
-              n ? c.jsx("p", { children: n }) : null,
+              jsxRuntime.jsx("h3", { children: e }),
+              n ? jsxRuntime.jsx("p", { children: n }) : null,
             ],
           }),
         }),
-        c.jsx("div", {
+        jsxRuntime.jsx("div", {
           className: `modal__body${r ? ` ${r}` : ""}`,
           children: t,
         }),
         a
-          ? c.jsx("div", {
+          ? jsxRuntime.jsx("div", {
               className: `modal__footer${y ? ` ${y}` : ""}`,
               children: a,
             })
@@ -122,20 +127,20 @@ function nl({
     }),
   });
 }
-const su = "xperp-mock-auth-stage",
-  dl = "xperp-mock-auth-user",
-  Pt = "xperp-mock-auth-profile",
-  kn = "xperp-mock-otp-failures",
-  Kn = "xperp-mock-otp-locked",
-  Ls = {
+const AUTH_STAGE_KEY = "xperp-mock-auth-stage",
+  AUTH_USER_ID_KEY = "xperp-mock-auth-user",
+  AUTH_PROFILE_KEY = "xperp-mock-auth-profile",
+  OTP_FAILURE_COUNT_KEY = "xperp-mock-otp-failures",
+  OTP_LOCKED_KEY = "xperp-mock-otp-locked",
+  DEFAULT_ACCOUNT_PROFILE = {
     userId: "chat1004",
     id: "chat1004",
     name: "박운영",
     role: "MASTER",
     department: "운영 관리자",
   },
-  Uv = {
-    test0000: Ls,
+  ACCOUNT_PROFILE_BY_USER_ID = {
+    test0000: DEFAULT_ACCOUNT_PROFILE,
     test1111: {
       userId: "test1111",
       id: "op2031",
@@ -144,7 +149,7 @@ const su = "xperp-mock-auth-stage",
       department: "운영 담당",
     },
   },
-  fr = (e) => {
+  parseStoredAccountProfile = (e) => {
     if (!e) return null;
     try {
       const t = JSON.parse(e);
@@ -155,49 +160,49 @@ const su = "xperp-mock-auth-stage",
       return null;
     }
   },
-  Hv = (e) => Uv[e] ?? Ls,
-  Mh = () => {
-    if (typeof window > "u") return Ls;
-    const e = fr(window.sessionStorage.getItem(Pt));
+  resolveAccountProfile = (e) => ACCOUNT_PROFILE_BY_USER_ID[e] ?? DEFAULT_ACCOUNT_PROFILE,
+  loadCurrentAccountProfile = () => {
+    if (typeof window > "u") return DEFAULT_ACCOUNT_PROFILE;
+    const e = parseStoredAccountProfile(window.sessionStorage.getItem(AUTH_PROFILE_KEY));
     if (e) return e;
-    const t = fr(window.localStorage.getItem(Pt));
+    const t = parseStoredAccountProfile(window.localStorage.getItem(AUTH_PROFILE_KEY));
     if (t) return t;
     const l =
-      window.sessionStorage.getItem(dl) ??
-      window.localStorage.getItem(dl) ??
+      window.sessionStorage.getItem(AUTH_USER_ID_KEY) ??
+      window.localStorage.getItem(AUTH_USER_ID_KEY) ??
       "";
-    return Hv(l);
+    return resolveAccountProfile(l);
   },
-  qv = (e, t) => {
+  persistAccountProfile = (e, t) => {
     if (typeof window > "u") return;
     const l = JSON.stringify(e);
-    (window.sessionStorage.setItem(Pt, l),
+    (window.sessionStorage.setItem(AUTH_PROFILE_KEY, l),
       t
-        ? window.localStorage.setItem(Pt, l)
-        : window.localStorage.removeItem(Pt));
+        ? window.localStorage.setItem(AUTH_PROFILE_KEY, l)
+        : window.localStorage.removeItem(AUTH_PROFILE_KEY));
   },
-  Lv = () => {
+  clearPersistedAccountProfile = () => {
     typeof window > "u" ||
-      (window.sessionStorage.removeItem(Pt),
-      window.localStorage.removeItem(Pt));
+      (window.sessionStorage.removeItem(AUTH_PROFILE_KEY),
+      window.localStorage.removeItem(AUTH_PROFILE_KEY));
   },
-  Dh = 10,
-  Ch = 12,
-  Bv = "123456",
-  Lc = 5,
-  Yv = {
+  LOGIN_USER_ID_MAX_LENGTH = 10,
+  LOGIN_PASSWORD_MAX_LENGTH = 12,
+  DEFAULT_OTP_CODE = "123456",
+  MAX_OTP_ATTEMPTS = 5,
+  invalidLoginDialog = {
     title: "로그인 오류",
     message: `아이디 또는 비밀번호가 올바르지 않습니다.다시 확인해 주세요.`,
   },
-  wv = {
+  accessDeniedDialog = {
     title: "권한 없음",
     message: `권한이 없는 사용자입니다.관리자에게 권한을 요청해 주세요.`,
   },
-  rr = {
+  otpLockedDialog = {
     title: "OTP 잠금",
     message: `OTP 오류로 잠금된 아이디 입니다.관리자에게 문의하세요.`,
   },
-  or = {
+  loginAccountDirectory = {
     test0000: {
       password: "a123456789",
       profile: {
@@ -232,57 +237,77 @@ const su = "xperp-mock-auth-stage",
       allowed: !1,
     },
   },
-  Vv = { userId: "", password: "", otp: "" },
-  dr = (e) =>
+  EMPTY_CREDENTIALS = { userId: "", password: "", otp: "" },
+  delay = (e) =>
     new Promise((t) => {
       window.setTimeout(t, e);
     }),
-  Qv = (e) => {
+  toSafeNumber = (e) => {
     const t = Number(e ?? "0");
     return Number.isFinite(t) ? t : 0;
   },
-  Bc = (e) => e.replace(/[^A-Za-z0-9]/g, "").slice(0, Dh),
-  hr = (e) => e.replace(/[^A-Za-z0-9]/g, "").slice(0, Ch);
-function AuthScreen({ onAuthenticated: e }) {
-  const [t, l] = j.useState(Vv),
-    [a, n] = j.useState(""),
-    [u, i] = j.useState(""),
-    [s, f] = j.useState(!1),
-    [r, b] = j.useState(!1),
-    [y, h] = j.useState(!1),
-    [m, A] = j.useState(0),
-    [N, R] = j.useState(!1),
-    [o, d] = j.useState(null),
-    v = j.useMemo(
+  sanitizeUserId = (e) => e.replace(/[^A-Za-z0-9]/g, "").slice(0, LOGIN_USER_ID_MAX_LENGTH),
+  sanitizePassword = (e) => e.replace(/[^A-Za-z0-9]/g, "").slice(0, LOGIN_PASSWORD_MAX_LENGTH);
+function AuthScreen({ onAuthenticated }) {
+  const [credentialForm, setCredentialForm] = hookRuntime.useState(EMPTY_CREDENTIALS),
+    [helperMessage, setHelperMessage] = hookRuntime.useState(""),
+    [errorMessage, setErrorMessage] = hookRuntime.useState(""),
+    [isSubmitting, setIsSubmitting] = hookRuntime.useState(!1),
+    [rememberUserId, setRememberUserId] = hookRuntime.useState(!1),
+    [isOtpPanelOpen, setIsOtpPanelOpen] = hookRuntime.useState(!1),
+    [otpFailureCount, setOtpFailureCount] = hookRuntime.useState(0),
+    [isOtpLocked, setIsOtpLocked] = hookRuntime.useState(!1),
+    [noticeDialog, setNoticeDialog] = hookRuntime.useState(null),
+    e = onAuthenticated,
+    t = credentialForm,
+    l = setCredentialForm,
+    a = helperMessage,
+    n = setHelperMessage,
+    u = errorMessage,
+    i = setErrorMessage,
+    s = isSubmitting,
+    f = setIsSubmitting,
+    r = rememberUserId,
+    b = setRememberUserId,
+    y = isOtpPanelOpen,
+    h = setIsOtpPanelOpen,
+    m = otpFailureCount,
+    A = setOtpFailureCount,
+    N = isOtpLocked,
+    R = setIsOtpLocked,
+    o = noticeDialog,
+    d = setNoticeDialog,
+    otpCaption = hookRuntime.useMemo(
       () =>
         N
           ? "OTP 오류로 잠금된 아이디입니다. 관리자에게 문의하세요."
           : m > 0
-            ? `OTP 인증에 실패했습니다. (${m}/${Lc})`
+            ? `OTP 인증에 실패했습니다. (${m}/${MAX_OTP_ATTEMPTS})`
             : "OTP를 입력하면 로그인 절차를 완료합니다.",
       [m, N],
     );
-  j.useEffect(() => {
+  const v = otpCaption;
+  hookRuntime.useEffect(() => {
     if (typeof window > "u") return;
-    const Q = window.sessionStorage.getItem(su),
+    const Q = window.sessionStorage.getItem(AUTH_STAGE_KEY),
       se =
-        window.sessionStorage.getItem(dl) ??
-        window.localStorage.getItem(dl) ??
+        window.sessionStorage.getItem(AUTH_USER_ID_KEY) ??
+        window.localStorage.getItem(AUTH_USER_ID_KEY) ??
         "",
-      xe = window.sessionStorage.getItem(Kn) === "true",
-      x = Qv(window.sessionStorage.getItem(kn));
+      xe = window.sessionStorage.getItem(OTP_LOCKED_KEY) === "true",
+      x = toSafeNumber(window.sessionStorage.getItem(OTP_FAILURE_COUNT_KEY));
     if (Q === "authenticated") {
       e();
       return;
     }
-    const z = Bc(se);
+    const z = sanitizeUserId(se);
     (l((U) => ({ ...U, userId: z })),
       R(xe),
       A(x),
       h(Q === "otp_pending" && !!z));
   }, [e]);
   const g = (Q) => (se) => {
-      const xe = Q === "userId" ? Bc(se) : Q === "password" ? hr(se) : se;
+      const xe = Q === "userId" ? sanitizeUserId(se) : Q === "password" ? sanitizePassword(se) : se;
       (l((x) => ({ ...x, [Q]: xe })), i(""));
     },
     E = (Q) => {
@@ -303,52 +328,52 @@ function AuthScreen({ onAuthenticated: e }) {
         i("아이디와 비밀번호를 입력해 주세요.");
         return;
       }
-      const se = Bc(t.userId.trim()),
-        xe = hr(t.password.trim()),
-        x = or[se];
+      const se = sanitizeUserId(t.userId.trim()),
+        xe = sanitizePassword(t.password.trim()),
+        x = loginAccountDirectory[se];
       if (!x || x.password !== xe) {
-        E(Yv);
+        E(invalidLoginDialog);
         return;
       }
       if (!x.allowed) {
-        E(wv);
+        E(accessDeniedDialog);
         return;
       }
       (f(!0),
         n("OTP 입력 창을 여는 중입니다."),
-        window.sessionStorage.setItem(su, "otp_pending"),
-        window.sessionStorage.setItem(dl, se),
-        window.sessionStorage.setItem(kn, "0"),
-        window.sessionStorage.removeItem(Kn),
+        window.sessionStorage.setItem(AUTH_STAGE_KEY, "otp_pending"),
+        window.sessionStorage.setItem(AUTH_USER_ID_KEY, se),
+        window.sessionStorage.setItem(OTP_FAILURE_COUNT_KEY, "0"),
+        window.sessionStorage.removeItem(OTP_LOCKED_KEY),
         r
-          ? window.localStorage.setItem(dl, se)
-          : window.localStorage.removeItem(dl),
-        await dr(250),
+          ? window.localStorage.setItem(AUTH_USER_ID_KEY, se)
+          : window.localStorage.removeItem(AUTH_USER_ID_KEY),
+        await delay(250),
         f(!1),
         T());
     },
     _ = async (Q) => {
       if ((Q.preventDefault(), s || !y)) return;
       if (N) {
-        E(rr);
+        E(otpLockedDialog);
         return;
       }
       if (t.otp.trim().length !== 6) {
         i("6자리 OTP를 입력해 주세요.");
         return;
       }
-      if ((f(!0), t.otp.trim() !== Bv)) {
+      if ((f(!0), t.otp.trim() !== DEFAULT_OTP_CODE)) {
         const x = m + 1,
-          z = x >= Lc;
+          z = x >= MAX_OTP_ATTEMPTS;
         (A(x),
-          window.sessionStorage.setItem(kn, String(x)),
+          window.sessionStorage.setItem(OTP_FAILURE_COUNT_KEY, String(x)),
           z
-            ? (R(!0), window.sessionStorage.setItem(Kn, "true"), E(rr))
-            : i(`OTP 인증에 실패했습니다. (${x}/${Lc})`),
+            ? (R(!0), window.sessionStorage.setItem(OTP_LOCKED_KEY, "true"), E(otpLockedDialog))
+            : i(`OTP 인증에 실패했습니다. (${x}/${MAX_OTP_ATTEMPTS})`),
           f(!1));
         return;
       }
-      const se = or[t.userId.trim()],
+      const se = loginAccountDirectory[t.userId.trim()],
         xe = (se == null ? void 0 : se.profile) ?? {
           userId: t.userId.trim(),
           id: t.userId.trim(),
@@ -356,78 +381,78 @@ function AuthScreen({ onAuthenticated: e }) {
           role: "MASTER",
           department: "운영 관리자",
         };
-      (qv(xe, r),
-        window.sessionStorage.setItem(su, "authenticated"),
-        window.sessionStorage.setItem(Pt, JSON.stringify(xe)),
-        window.sessionStorage.removeItem(kn),
-        window.sessionStorage.removeItem(Kn),
+      (persistAccountProfile(xe, r),
+        window.sessionStorage.setItem(AUTH_STAGE_KEY, "authenticated"),
+        window.sessionStorage.setItem(AUTH_PROFILE_KEY, JSON.stringify(xe)),
+        window.sessionStorage.removeItem(OTP_FAILURE_COUNT_KEY),
+        window.sessionStorage.removeItem(OTP_LOCKED_KEY),
         n("대시보드로 이동합니다."),
-        await dr(250),
+        await delay(250),
         e());
     },
     te = s || !t.userId.trim() || !t.password.trim(),
     De = s || N || t.otp.trim().length !== 6;
-  return c.jsxs("main", {
+  return jsxRuntime.jsxs("main", {
     className: "auth-shell auth-shell--standalone",
     children: [
-      c.jsxs("section", {
+      jsxRuntime.jsxs("section", {
         className: "auth-card auth-standalone",
         children: [
-          c.jsxs("div", {
+          jsxRuntime.jsxs("div", {
             className: "auth-card__intro auth-standalone__intro",
             children: [
-              c.jsx("span", {
+              jsxRuntime.jsx("span", {
                 className: "auth-card__badge",
                 children: "Xp도우미",
               }),
-              c.jsx("h1", {
+              jsxRuntime.jsx("h1", {
                 className: "auth-card__title",
                 children: "Xp도우미 관리자",
               }),
-              c.jsx("p", {
+              jsxRuntime.jsx("p", {
                 className: "auth-card__eyebrow",
                 children: "관리자 전용 시스템",
               }),
-              c.jsxs("p", {
+              jsxRuntime.jsxs("p", {
                 className: "auth-card__description",
                 children: [
                   "본 시스템은 내부 관리자 전용입니다.",
-                  c.jsx("br", {}),
+                  jsxRuntime.jsx("br", {}),
                   "무단 접근 및 정보 열람 시 관련 법령에 따라 책임이 발생할 수 있습니다.",
                 ],
               }),
             ],
           }),
-          c.jsxs("form", {
+          jsxRuntime.jsxs("form", {
             className: "auth-form",
             onSubmit: S,
             children: [
-              c.jsxs("div", {
+              jsxRuntime.jsxs("div", {
                 className: "auth-form__header",
                 children: [
-                  c.jsx("h2", {
+                  jsxRuntime.jsx("h2", {
                     className: "auth-form__title",
                     children: "관리자 로그인",
                   }),
-                  c.jsx("p", {
+                  jsxRuntime.jsx("p", {
                     className: "auth-form__caption",
                     children: "승인된 계정만 접속 가능합니다.",
                   }),
                 ],
               }),
-              c.jsxs("div", {
+              jsxRuntime.jsxs("div", {
                 className: "auth-form__fields",
                 children: [
-                  c.jsxs("label", {
+                  jsxRuntime.jsxs("label", {
                     className: "field auth-field",
                     children: [
-                      c.jsx("span", {
+                      jsxRuntime.jsx("span", {
                         className: "field__label",
                         children: "아이디",
                       }),
-                      c.jsx("input", {
+                      jsxRuntime.jsx("input", {
                         className: "field__input auth-input",
-                        maxLength: Dh,
+                        maxLength: LOGIN_USER_ID_MAX_LENGTH,
                         value: t.userId,
                         onChange: (Q) => g("userId")(Q.target.value),
                         placeholder: "예: admin01",
@@ -436,17 +461,17 @@ function AuthScreen({ onAuthenticated: e }) {
                       }),
                     ],
                   }),
-                  c.jsxs("label", {
+                  jsxRuntime.jsxs("label", {
                     className: "field auth-field",
                     children: [
-                      c.jsx("span", {
+                      jsxRuntime.jsx("span", {
                         className: "field__label",
                         children: "비밀번호",
                       }),
-                      c.jsx("input", {
+                      jsxRuntime.jsx("input", {
                         type: "password",
                         className: "field__input auth-input",
-                        maxLength: Ch,
+                        maxLength: LOGIN_PASSWORD_MAX_LENGTH,
                         value: t.password,
                         onChange: (Q) => g("password")(Q.target.value),
                         placeholder: "비밀번호 입력",
@@ -455,37 +480,37 @@ function AuthScreen({ onAuthenticated: e }) {
                       }),
                     ],
                   }),
-                  c.jsxs("label", {
+                  jsxRuntime.jsxs("label", {
                     className: "auth-remember",
                     children: [
-                      c.jsx("input", {
+                      jsxRuntime.jsx("input", {
                         type: "checkbox",
                         checked: r,
                         onChange: (Q) => b(Q.target.checked),
                       }),
-                      c.jsx("span", { children: "아이디 저장" }),
+                      jsxRuntime.jsx("span", { children: "아이디 저장" }),
                     ],
                   }),
                 ],
               }),
-              c.jsx("div", {
+              jsxRuntime.jsx("div", {
                 className: "auth-form__actions",
-                children: c.jsx("button", {
+                children: jsxRuntime.jsx("button", {
                   type: "submit",
                   className: "primary-button auth-submit",
                   disabled: te,
                   children: s ? "처리 중..." : "로그인",
                 }),
               }),
-              c.jsxs("div", {
+              jsxRuntime.jsxs("div", {
                 className: "auth-form__feedback",
                 "aria-live": "polite",
                 children: [
                   u
-                    ? c.jsx("p", { className: "auth-error", children: u })
+                    ? jsxRuntime.jsx("p", { className: "auth-error", children: u })
                     : null,
                   !u && a
-                    ? c.jsx("p", { className: "auth-helper", children: a })
+                    ? jsxRuntime.jsx("p", { className: "auth-helper", children: a })
                     : null,
                 ],
               }),
@@ -494,40 +519,40 @@ function AuthScreen({ onAuthenticated: e }) {
         ],
       }),
       y
-        ? c.jsx(Oh, {
+        ? jsxRuntime.jsx(Oh, {
             backdropClassName: "auth-otp-backdrop",
             onBackdropClick: D,
-            children: c.jsxs("section", {
+            children: jsxRuntime.jsxs("section", {
               className: "modal auth-otp-modal",
               role: "dialog",
               "aria-modal": "true",
               "aria-label": "OTP 인증",
               onClick: (Q) => Q.stopPropagation(),
               children: [
-                c.jsx("div", {
+                jsxRuntime.jsx("div", {
                   className: "modal__header auth-otp-modal__header",
-                  children: c.jsxs("div", {
+                  children: jsxRuntime.jsxs("div", {
                     children: [
-                      c.jsx("h3", { children: "OTP 인증" }),
-                      c.jsx("p", {
+                      jsxRuntime.jsx("h3", { children: "OTP 인증" }),
+                      jsxRuntime.jsx("p", {
                         className: "auth-otp-modal__caption",
                         children: v,
                       }),
                     ],
                   }),
                 }),
-                c.jsxs("form", {
+                jsxRuntime.jsxs("form", {
                   className: "auth-otp-modal__body",
                   onSubmit: _,
                   children: [
-                    c.jsxs("label", {
+                    jsxRuntime.jsxs("label", {
                       className: "field auth-otp-field",
                       children: [
-                        c.jsx("span", {
+                        jsxRuntime.jsx("span", {
                           className: "field__label",
                           children: "OTP",
                         }),
-                        c.jsx("input", {
+                        jsxRuntime.jsx("input", {
                           className: "field__input auth-input auth-input--otp",
                           value: t.otp,
                           onChange: (Q) => g("otp")(Q.target.value),
@@ -539,31 +564,31 @@ function AuthScreen({ onAuthenticated: e }) {
                         }),
                       ],
                     }),
-                    c.jsxs("div", {
+                    jsxRuntime.jsxs("div", {
                       className: "auth-form__feedback",
                       "aria-live": "polite",
                       children: [
                         u
-                          ? c.jsx("p", { className: "auth-error", children: u })
+                          ? jsxRuntime.jsx("p", { className: "auth-error", children: u })
                           : null,
                         !u && a
-                          ? c.jsx("p", {
+                          ? jsxRuntime.jsx("p", {
                               className: "auth-helper",
                               children: a,
                             })
                           : null,
                       ],
                     }),
-                    c.jsxs("div", {
+                    jsxRuntime.jsxs("div", {
                       className: "auth-form__actions auth-otp-modal__actions",
                       children: [
-                        c.jsx("button", {
+                        jsxRuntime.jsx("button", {
                           type: "button",
                           className: "secondary-button auth-cancel",
                           onClick: D,
                           children: "취소",
                         }),
-                        c.jsx("button", {
+                        jsxRuntime.jsx("button", {
                           type: "submit",
                           className: "primary-button auth-submit",
                           disabled: De,
@@ -578,7 +603,7 @@ function AuthScreen({ onAuthenticated: e }) {
           })
         : null,
       o
-        ? c.jsx(nl, {
+        ? jsxRuntime.jsx(nl, {
             title: o.title,
             ariaLabel: o.title,
             onClose: C,
@@ -589,13 +614,13 @@ function AuthScreen({ onAuthenticated: e }) {
             headerClassName: "modal__header--tight auth-notice-modal__header",
             bodyClassName: "auth-notice-modal__body",
             footerClassName: "modal__footer--split",
-            footer: c.jsx("button", {
+            footer: jsxRuntime.jsx("button", {
               type: "button",
               className: "primary-button",
               onClick: C,
               children: "확인",
             }),
-            children: c.jsx("p", {
+            children: jsxRuntime.jsx("p", {
               className: "auth-notice-modal__message",
               children: o.message,
             }),
@@ -604,7 +629,7 @@ function AuthScreen({ onAuthenticated: e }) {
     ],
   });
 }
-const Ul = (e, t, l) => {
+const buildKeywordSummary = (e, t, l) => {
     const a = Number(((t / Math.max(e, 1)) * 100).toFixed(1));
     return {
       count: t,
@@ -663,14 +688,14 @@ const Ul = (e, t, l) => {
       fixedFeedbackRatio: {
         totalCount: 340,
         defaultReaction: "POSITIVE",
-        positive: Ul(340, 187, [
+        positive: buildKeywordSummary(340, 187, [
           { label: "응답이 빨라요", count: 52 },
           { label: "설명이 명확해요", count: 44 },
           { label: "추천할 만해요", count: 33 },
           { label: "사용하기 쉬워요", count: 29 },
           { label: "불편함이 없어요", count: 24 },
         ]),
-        negative: Ul(340, 153, [
+        negative: buildKeywordSummary(340, 153, [
           { label: "응답이 늦어요", count: 41 },
           { label: "의도가 조금 달라요", count: 36 },
           { label: "설명이 부족해요", count: 28 },
@@ -759,14 +784,14 @@ const Ul = (e, t, l) => {
       fixedFeedbackRatio: {
         totalCount: 1680,
         defaultReaction: "POSITIVE",
-        positive: Ul(1680, 924, [
+        positive: buildKeywordSummary(1680, 924, [
           { label: "응답이 빨라요", count: 260 },
           { label: "설명이 명확해요", count: 210 },
           { label: "추천할 만해요", count: 175 },
           { label: "사용하기 쉬워요", count: 150 },
           { label: "불편함이 없어요", count: 129 },
         ]),
-        negative: Ul(1680, 756, [
+        negative: buildKeywordSummary(1680, 756, [
           { label: "응답이 늦어요", count: 230 },
           { label: "의도가 조금 달라요", count: 162 },
           { label: "설명이 부족해요", count: 143 },
@@ -830,14 +855,14 @@ const Ul = (e, t, l) => {
       fixedFeedbackRatio: {
         totalCount: 11240,
         defaultReaction: "POSITIVE",
-        positive: Ul(11240, 6519, [
+        positive: buildKeywordSummary(11240, 6519, [
           { label: "응답이 빨라요", count: 1820 },
           { label: "설명이 명확해요", count: 1512 },
           { label: "추천할 만해요", count: 1260 },
           { label: "사용하기 쉬워요", count: 1014 },
           { label: "불편함이 없어요", count: 913 },
         ]),
-        negative: Ul(11240, 4721, [
+        negative: buildKeywordSummary(11240, 4721, [
           { label: "응답이 늦어요", count: 1290 },
           { label: "의도가 조금 달라요", count: 1174 },
           { label: "설명이 부족해요", count: 980 },
@@ -849,72 +874,72 @@ const Ul = (e, t, l) => {
   };
 function SectionHeader({ title: e, actions: t, className: l, titleAs: a = "h2" }) {
   const n = a;
-  return c.jsxs("div", {
+  return jsxRuntime.jsxs("div", {
     className: `section-header${l ? ` ${l}` : ""}`,
     children: [
-      c.jsx("div", {
+      jsxRuntime.jsx("div", {
         className: "section-header__copy",
-        children: c.jsx(n, { className: "section-header__title", children: e }),
+        children: jsxRuntime.jsx(n, { className: "section-header__title", children: e }),
       }),
       t
-        ? c.jsx("div", { className: "section-header__actions", children: t })
+        ? jsxRuntime.jsx("div", { className: "section-header__actions", children: t })
         : null,
     ],
   });
 }
-const mr = (e) =>
+const normalizeSearchKeyword = (e) =>
     e
       .toLowerCase()
       .trim()
       .replace(/\s+/g, "")
       .replace(/[^0-9a-z가-힣]/gi, ""),
-  Bu = (e, t) => t.localeCompare(e),
-  fu = (e) => (Number.isInteger(e) ? `${e}%` : `${e.toFixed(1)}%`);
+  sortDescendingByTimestamp = (e, t) => t.localeCompare(e),
+  formatPercent = (e) => (Number.isInteger(e) ? `${e}%` : `${e.toFixed(1)}%`);
 function KeywordList({ title: e, items: t, bare: l }) {
-  return c.jsxs("section", {
+  return jsxRuntime.jsxs("section", {
     className: `dashboard-keyword-card${l ? " dashboard-keyword-card--bare" : ""}`,
     children: [
-      c.jsx(SectionHeader, { title: e, className: "dashboard-keyword-card__header" }),
+      jsxRuntime.jsx(SectionHeader, { title: e, className: "dashboard-keyword-card__header" }),
       t.length === 0
-        ? c.jsx("div", {
+        ? jsxRuntime.jsx("div", {
             className: "dashboard-keyword-empty",
             children: "조건에 맞는 질문 키워드가 없습니다.",
           })
-        : c.jsx("ol", {
+        : jsxRuntime.jsx("ol", {
             className: "keyword-list",
             children: t.map((a) =>
-              c.jsxs(
+              jsxRuntime.jsxs(
                 "li",
                 {
                   className: "keyword-list__item",
                   children: [
-                    c.jsxs("div", {
+                    jsxRuntime.jsxs("div", {
                       className: "keyword-list__left",
                       children: [
-                        c.jsx("span", {
+                        jsxRuntime.jsx("span", {
                           className: "keyword-list__rank",
                           children: a.rank,
                         }),
-                        c.jsx("span", {
+                        jsxRuntime.jsx("span", {
                           className: "keyword-list__label",
                           children: a.label,
                         }),
                       ],
                     }),
-                    c.jsxs("div", {
+                    jsxRuntime.jsxs("div", {
                       className: "keyword-list__stats",
                       children: [
-                        c.jsxs("strong", {
+                        jsxRuntime.jsxs("strong", {
                           className: "keyword-list__count",
                           children: [a.count.toLocaleString(), "건"],
                         }),
-                        c.jsx("span", {
+                        jsxRuntime.jsx("span", {
                           className: "keyword-list__divider",
                           children: "·",
                         }),
-                        c.jsx("span", {
+                        jsxRuntime.jsx("span", {
                           className: "keyword-list__ratio",
-                          children: fu(a.ratio),
+                          children: formatPercent(a.ratio),
                         }),
                       ],
                     }),
@@ -927,7 +952,7 @@ function KeywordList({ title: e, items: t, bare: l }) {
     ],
   });
 }
-const Yc = {
+const feedbackReactionMeta = {
     POSITIVE: { label: "만족해요", tooltipLabel: "만족해요" },
     NEGATIVE: { label: "아쉬워요", tooltipLabel: "아쉬워요" },
   },
@@ -954,40 +979,40 @@ const Yc = {
     ].join(" ");
   };
 function FeedbackRatio({ data: e }) {
-  const [t, l] = j.useState(e.defaultReaction),
-    [a, n] = j.useState(null),
+  const [t, l] = hookRuntime.useState(e.defaultReaction),
+    [a, n] = hookRuntime.useState(null),
     u = (e.positive.count / e.totalCount) * 100,
     i = (e.negative.count / e.totalCount) * 100,
-    s = j.useMemo(
+    s = hookRuntime.useMemo(
       () => yr(0, (e.positive.count / e.totalCount) * 360),
       [e.positive.count, e.totalCount],
     ),
-    f = j.useMemo(
+    f = hookRuntime.useMemo(
       () => yr((e.positive.count / e.totalCount) * 360, 360),
       [e.positive.count, e.totalCount],
     ),
     r = a ? e[a === "POSITIVE" ? "positive" : "negative"] : null,
-    b = `${Yc[t].label} TOP5 키워드`;
-  return c.jsxs("section", {
+    b = `${feedbackReactionMeta[t].label} TOP5 키워드`;
+  return jsxRuntime.jsxs("section", {
     className: "panel panel--side feedback-ratio-card",
     children: [
-      c.jsx(SectionHeader, {
+      jsxRuntime.jsx(SectionHeader, {
         title: "피드백 비율",
         className: "feedback-ratio-card__header",
       }),
-      c.jsxs("div", {
+      jsxRuntime.jsxs("div", {
         className: "feedback-ratio",
         children: [
-          c.jsxs("div", {
+          jsxRuntime.jsxs("div", {
             className: "feedback-ratio__chart-shell",
             children: [
-              c.jsxs("svg", {
+              jsxRuntime.jsxs("svg", {
                 className: "feedback-ratio__chart",
                 viewBox: `0 0 ${vr} ${vr}`,
                 role: "img",
-                "aria-label": `피드백 비율 도넛 차트. 만족해요 ${fu(u)}, 아쉬워요 ${fu(i)}`,
+                "aria-label": `피드백 비율 도넛 차트. 만족해요 ${formatPercent(u)}, 아쉬워요 ${formatPercent(i)}`,
                 children: [
-                  c.jsx("path", {
+                  jsxRuntime.jsx("path", {
                     d: s,
                     className:
                       "feedback-ratio__slice feedback-ratio__slice--positive",
@@ -997,7 +1022,7 @@ function FeedbackRatio({ data: e }) {
                     onBlur: () => n(null),
                     tabIndex: 0,
                   }),
-                  c.jsx("path", {
+                  jsxRuntime.jsx("path", {
                     d: f,
                     className:
                       "feedback-ratio__slice feedback-ratio__slice--negative",
@@ -1007,20 +1032,20 @@ function FeedbackRatio({ data: e }) {
                     onBlur: () => n(null),
                     tabIndex: 0,
                   }),
-                  c.jsx("circle", {
+                  jsxRuntime.jsx("circle", {
                     cx: ct,
                     cacheQaRecords: ct,
                     r: La,
                     className: "feedback-ratio__hole",
                   }),
-                  c.jsx("text", {
+                  jsxRuntime.jsx("text", {
                     x: "50",
                     y: "46",
                     textAnchor: "middle",
                     className: "feedback-ratio__center-label",
                     children: "전체 건수",
                   }),
-                  c.jsxs("text", {
+                  jsxRuntime.jsxs("text", {
                     x: "50",
                     y: "60",
                     textAnchor: "middle",
@@ -1030,19 +1055,19 @@ function FeedbackRatio({ data: e }) {
                 ],
               }),
               r
-                ? c.jsxs("div", {
+                ? jsxRuntime.jsxs("div", {
                     className: "feedback-ratio__tooltip",
                     "aria-live": "polite",
                     children: [
-                      c.jsx("span", {
+                      jsxRuntime.jsx("span", {
                         className: "feedback-ratio__tooltip-label",
-                        children: Yc[a].tooltipLabel,
+                        children: feedbackReactionMeta[a].tooltipLabel,
                       }),
-                      c.jsxs("strong", {
+                      jsxRuntime.jsxs("strong", {
                         children: [
                           r.count.toLocaleString(),
                           "건 · ",
-                          fu(r.ratio),
+                          formatPercent(r.ratio),
                         ],
                       }),
                     ],
@@ -1050,13 +1075,13 @@ function FeedbackRatio({ data: e }) {
                 : null,
             ],
           }),
-          c.jsx("div", {
+          jsxRuntime.jsx("div", {
             className: "feedback-toggle",
             role: "tablist",
             "aria-label": "피드백 유형",
             children: ["POSITIVE", "NEGATIVE"].map((y) => {
               const h = y === t;
-              return c.jsx(
+              return jsxRuntime.jsx(
                 "button",
                 {
                   type: "button",
@@ -1064,13 +1089,13 @@ function FeedbackRatio({ data: e }) {
                   "aria-selected": h,
                   className: `feedback-toggle__button${h ? " is-selected" : ""}`,
                   onClick: () => l(y),
-                  children: Yc[y].label,
+                  children: feedbackReactionMeta[y].label,
                 },
                 y,
               );
             }),
           }),
-          c.jsx(KeywordList, {
+          jsxRuntime.jsx(KeywordList, {
             title: b,
             items: t === "POSITIVE" ? e.positive.keywords : e.negative.keywords,
             bare: !0,
@@ -1083,57 +1108,57 @@ function FeedbackRatio({ data: e }) {
 function MetricCard({ metric: e }) {
   const t = e.compareDirection === "UP" ? "+" : "-",
     l = e.compareDirection === "UP" ? "is-up" : "is-down";
-  return c.jsxs("article", {
+  return jsxRuntime.jsxs("article", {
     className: "metric-card",
     children: [
-      c.jsx("div", { className: "metric-card__label", children: e.label }),
-      c.jsxs("div", {
+      jsxRuntime.jsx("div", { className: "metric-card__label", children: e.label }),
+      jsxRuntime.jsxs("div", {
         className: "metric-card__value",
         children: [e.value.toLocaleString(), "건"],
       }),
-      c.jsxs("div", {
+      jsxRuntime.jsxs("div", {
         className: `metric-card__compare ${l}`,
         children: [
-          c.jsxs("strong", { children: [t, " ", e.compareRate, "%"] }),
-          c.jsx("span", { children: e.compareLabel }),
+          jsxRuntime.jsxs("strong", { children: [t, " ", e.compareRate, "%"] }),
+          jsxRuntime.jsx("span", { children: e.compareLabel }),
         ],
       }),
     ],
   });
 }
-const kv = {
+const timeRangeMeta = {
     DAY: { label: "일간", note: "오늘 기준 7일" },
     WEEK: { label: "주간", note: "이번주 기준 7주" },
     MONTH: { label: "월간", note: "이번달 기준 7달" },
   },
-  Kv = ["DAY", "WEEK", "MONTH"];
+  TIME_RANGE_KEYS = ["DAY", "WEEK", "MONTH"];
 function TimeRangeTabs({ value: e, onChange: t }) {
-  return c.jsx("div", {
+  return jsxRuntime.jsx("div", {
     className: "time-range-tabs",
     role: "tablist",
     "aria-label": "기간 선택",
-    children: Kv.map((l) => {
+    children: TIME_RANGE_KEYS.map((l) => {
       const a = l === e;
-      return c.jsx(
+      return jsxRuntime.jsx(
         "button",
         {
           type: "button",
           className: `time-range-tabs__button${a ? " is-selected" : ""}`,
           onClick: () => t(l),
-          children: kv[l].label,
+          children: timeRangeMeta[l].label,
         },
         l,
       );
     }),
   });
 }
-const wc = 760,
-  Ht = 340,
-  et = 32,
-  Vc = 24,
+const CHART_WIDTH = 760,
+  CHART_HEIGHT = 340,
+  CHART_PADDING = 32,
+  TOOLTIP_WIDTH = 24,
   $v = 5,
-  br = (e, t, l) => Math.min(Math.max(e, t), l),
-  Wv = (e, t, l, a) => {
+  clamp = (e, t, l) => Math.min(Math.max(e, t), l),
+  buildRoundedRectPath = (e, t, l, a) => {
     const n = Math.max(a, 0),
       u = Math.min($v, l / 2, n / 2);
     return n
@@ -1151,16 +1176,16 @@ const wc = 760,
       : "";
   };
 function TrendChart({ points: e }) {
-  const [t, l] = j.useState(null),
+  const [t, l] = hookRuntime.useState(null),
     a = Math.max(...e.map((y) => y.visitors), 1),
     n = Math.max(...e.map((y) => y.inquiries), 1),
     i = Math.max(a, n) || 1,
-    s = j.useMemo(
+    s = hookRuntime.useMemo(
       () =>
         e.map((y, h) => {
-          const m = et + (h * (wc - et * 2)) / Math.max(e.length - 1, 1),
-            A = Ht - et - (y.visitors / i) * (Ht - et * 2),
-            N = Ht - et - (y.inquiries / i) * (Ht - et * 2);
+          const m = CHART_PADDING + (h * (CHART_WIDTH - CHART_PADDING * 2)) / Math.max(e.length - 1, 1),
+            A = CHART_HEIGHT - CHART_PADDING - (y.visitors / i) * (CHART_HEIGHT - CHART_PADDING * 2),
+            N = CHART_HEIGHT - CHART_PADDING - (y.inquiries / i) * (CHART_HEIGHT - CHART_PADDING * 2);
           return { ...y, x: m, visitorY: A, inquiryY: N };
         }),
       [e, i],
@@ -1177,36 +1202,36 @@ function TrendChart({ points: e }) {
       if (!m) return;
       const A = y.clientX - m.left + 14,
         N = y.clientY - m.top - 14,
-        R = br(A, 12, Math.max(m.width - 208, 12)),
-        o = br(N, 12, Math.max(m.height - 104, 12));
+        R = clamp(A, 12, Math.max(m.width - 208, 12)),
+        o = clamp(N, 12, Math.max(m.height - 104, 12));
       l({ point: h, left: R, top: o });
     };
   if (!s.length)
-    return c.jsxs("div", {
+    return jsxRuntime.jsxs("div", {
       className: "trend-chart trend-chart--empty",
       children: [
-        c.jsx("div", {
+        jsxRuntime.jsx("div", {
           className: "trend-chart__empty",
           children: "표시할 차트 데이터가 없습니다.",
         }),
-        c.jsxs("div", {
+        jsxRuntime.jsxs("div", {
           className: "trend-chart__legend",
           children: [
-            c.jsxs("span", {
+            jsxRuntime.jsxs("span", {
               className: "trend-chart__legend-item",
               children: [
-                c.jsx("span", {
+                jsxRuntime.jsx("span", {
                   className:
                     "trend-chart__legend-dot trend-chart__legend-dot--bar",
                 }),
-                c.jsx("span", { children: "접속자 수" }),
+                jsxRuntime.jsx("span", { children: "접속자 수" }),
               ],
             }),
-            c.jsxs("span", {
+            jsxRuntime.jsxs("span", {
               className: "trend-chart__legend-item",
               children: [
-                c.jsx("span", { className: "trend-chart__legend-dot" }),
-                c.jsx("span", { children: "문의 수" }),
+                jsxRuntime.jsx("span", { className: "trend-chart__legend-dot" }),
+                jsxRuntime.jsx("span", { children: "문의 수" }),
               ],
             }),
           ],
@@ -1214,25 +1239,25 @@ function TrendChart({ points: e }) {
       ],
     });
   const b = t == null ? void 0 : t.point;
-  return c.jsxs("div", {
+  return jsxRuntime.jsxs("div", {
     className: "trend-chart",
     children: [
-      c.jsxs("div", {
+      jsxRuntime.jsxs("div", {
         className: "trend-chart__stage",
         children: [
-          c.jsxs("svg", {
-            viewBox: `0 0 ${wc} ${Ht}`,
+          jsxRuntime.jsxs("svg", {
+            viewBox: `0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`,
             className: "trend-chart__svg",
             role: "img",
             children: [
               [0, 1, 2, 3, 4].map((y) => {
-                const h = et + (y * (Ht - et * 2)) / 4;
-                return c.jsx(
+                const h = CHART_PADDING + (y * (CHART_HEIGHT - CHART_PADDING * 2)) / 4;
+                return jsxRuntime.jsx(
                   "line",
                   {
-                    x1: et,
+                    x1: CHART_PADDING,
                     y1: h,
-                    x2: wc - et,
+                    x2: CHART_WIDTH - CHART_PADDING,
                     y2: h,
                     className: "trend-chart__grid",
                   },
@@ -1240,10 +1265,10 @@ function TrendChart({ points: e }) {
                 );
               }),
               s.map((y) => {
-                const h = y.x - Vc / 2,
-                  m = Ht - et - y.visitorY,
-                  A = Wv(h, y.visitorY, Vc, m);
-                return c.jsxs(
+                const h = y.x - TOOLTIP_WIDTH / 2,
+                  m = CHART_HEIGHT - CHART_PADDING - y.visitorY,
+                  A = buildRoundedRectPath(h, y.visitorY, TOOLTIP_WIDTH, m);
+                return jsxRuntime.jsxs(
                   "g",
                   {
                     className: "trend-chart__bar-group",
@@ -1251,18 +1276,18 @@ function TrendChart({ points: e }) {
                     onMouseMove: (N) => r(N, y),
                     onMouseLeave: () => l(null),
                     children: [
-                      c.jsx("path", { d: A, className: "trend-chart__bar" }),
-                      c.jsx("rect", {
+                      jsxRuntime.jsx("path", { d: A, className: "trend-chart__bar" }),
+                      jsxRuntime.jsx("rect", {
                         x: h - 4,
                         y: y.visitorY,
-                        width: Vc + 8,
+                        width: TOOLTIP_WIDTH + 8,
                         height: m,
                         fill: "transparent",
                         className: "trend-chart__bar-hitarea",
                       }),
-                      c.jsx("text", {
+                      jsxRuntime.jsx("text", {
                         x: y.x,
-                        y: Ht - 8,
+                        y: CHART_HEIGHT - 8,
                         textAnchor: "middle",
                         className: "trend-chart__label",
                         children: y.label,
@@ -1272,9 +1297,9 @@ function TrendChart({ points: e }) {
                   `${y.label}-bar`,
                 );
               }),
-              c.jsx("path", { d: f, className: "trend-chart__path" }),
+              jsxRuntime.jsx("path", { d: f, className: "trend-chart__path" }),
               s.map((y) =>
-                c.jsxs(
+                jsxRuntime.jsxs(
                   "g",
                   {
                     className: "trend-chart__point-group",
@@ -1282,13 +1307,13 @@ function TrendChart({ points: e }) {
                     onMouseMove: (h) => r(h, y),
                     onMouseLeave: () => l(null),
                     children: [
-                      c.jsx("circle", {
+                      jsxRuntime.jsx("circle", {
                         cx: y.x,
                         cacheQaRecords: y.inquiryY,
                         r: "5",
                         className: "trend-chart__point",
                       }),
-                      c.jsx("circle", {
+                      jsxRuntime.jsx("circle", {
                         cx: y.x,
                         cacheQaRecords: y.inquiryY,
                         r: "10",
@@ -1302,19 +1327,19 @@ function TrendChart({ points: e }) {
             ],
           }),
           b && t
-            ? c.jsxs("div", {
+            ? jsxRuntime.jsxs("div", {
                 className: "trend-chart__tooltip",
                 style: { left: t.left, top: t.top },
                 "aria-live": "polite",
                 children: [
-                  c.jsx("span", {
+                  jsxRuntime.jsx("span", {
                     className: "trend-chart__tooltip-date",
                     children: b.dateLabel,
                   }),
-                  c.jsxs("strong", {
+                  jsxRuntime.jsxs("strong", {
                     children: [b.visitors.toLocaleString(), " 접속자"],
                   }),
-                  c.jsxs("span", {
+                  jsxRuntime.jsxs("span", {
                     children: [b.inquiries.toLocaleString(), " 문의"],
                   }),
                 ],
@@ -1322,24 +1347,24 @@ function TrendChart({ points: e }) {
             : null,
         ],
       }),
-      c.jsxs("div", {
+      jsxRuntime.jsxs("div", {
         className: "trend-chart__legend",
         children: [
-          c.jsxs("span", {
+          jsxRuntime.jsxs("span", {
             className: "trend-chart__legend-item",
             children: [
-              c.jsx("span", {
+              jsxRuntime.jsx("span", {
                 className:
                   "trend-chart__legend-dot trend-chart__legend-dot--bar",
               }),
-              c.jsx("span", { children: "접속자 수" }),
+              jsxRuntime.jsx("span", { children: "접속자 수" }),
             ],
           }),
-          c.jsxs("span", {
+          jsxRuntime.jsxs("span", {
             className: "trend-chart__legend-item",
             children: [
-              c.jsx("span", { className: "trend-chart__legend-dot" }),
-              c.jsx("span", { children: "문의 수" }),
+              jsxRuntime.jsx("span", { className: "trend-chart__legend-dot" }),
+              jsxRuntime.jsx("span", { children: "문의 수" }),
             ],
           }),
         ],
@@ -1348,39 +1373,39 @@ function TrendChart({ points: e }) {
   });
 }
 function DashboardView({ data: e }) {
-  const [t, l] = j.useState(e.selectedRange),
+  const [t, l] = hookRuntime.useState(e.selectedRange),
     a = DASHBOARD_SECTIONS[t];
-  return c.jsxs("div", {
+  return jsxRuntime.jsxs("div", {
     className: "dashboard-grid",
     children: [
-      c.jsxs("section", {
+      jsxRuntime.jsxs("section", {
         className: "panel panel--main",
         children: [
-          c.jsx(SectionHeader, {
+          jsxRuntime.jsx(SectionHeader, {
             title: "기간별 지표 현황",
-            actions: c.jsx("div", {
+            actions: jsxRuntime.jsx("div", {
               className: "dashboard-header-actions",
-              children: c.jsx(TimeRangeTabs, { value: t, onChange: l }),
+              children: jsxRuntime.jsx(TimeRangeTabs, { value: t, onChange: l }),
             }),
           }),
-          c.jsx("div", {
+          jsxRuntime.jsx("div", {
             className: "metric-card-grid",
-            children: a.metrics.map((n) => c.jsx(MetricCard, { metric: n }, n.key)),
+            children: a.metrics.map((n) => jsxRuntime.jsx(MetricCard, { metric: n }, n.key)),
           }),
-          c.jsx(TrendChart, { points: a.trend }),
+          jsxRuntime.jsx(TrendChart, { points: a.trend }),
         ],
       }),
-      c.jsxs("section", {
+      jsxRuntime.jsxs("section", {
         className: "dashboard-side",
         children: [
-          c.jsx(KeywordList, { title: "질문 키워드", items: e.fixedKeywords }),
-          c.jsx(FeedbackRatio, { data: e.fixedFeedbackRatio }),
+          jsxRuntime.jsx(KeywordList, { title: "질문 키워드", items: e.fixedKeywords }),
+          jsxRuntime.jsx(FeedbackRatio, { data: e.fixedFeedbackRatio }),
         ],
       }),
     ],
   });
 }
-const contentDocuments = [
+const contentDocumentList = [
   {
     id: "doc-001",
     name: "챗봇 운영 매뉴얼",
@@ -1510,16 +1535,16 @@ function DetailFrame({
   bodyClassName: n,
   titleAs: u = "h3",
 }) {
-  return c.jsxs("section", {
+  return jsxRuntime.jsxs("section", {
     className: `detail-frame${a ? ` ${a}` : ""}`,
     children: [
-      c.jsx(SectionHeader, {
+      jsxRuntime.jsx(SectionHeader, {
         title: e,
         actions: t,
         className: "detail-frame__header",
         titleAs: u,
       }),
-      c.jsx("div", {
+      jsxRuntime.jsx("div", {
         className: `detail-frame__body${n ? ` ${n}` : ""}`,
         children: l,
       }),
@@ -1529,12 +1554,12 @@ function DetailFrame({
 function ToastStack({ items: e }) {
   return e.length === 0
     ? null
-    : c.jsx("div", {
+    : jsxRuntime.jsx("div", {
         className: "toast-stack",
         "aria-live": "polite",
         "aria-atomic": "true",
         children: e.map((t) =>
-          c.jsx(
+          jsxRuntime.jsx(
             "div",
             {
               className: `toast toast--${t.tone}`,
@@ -1546,17 +1571,17 @@ function ToastStack({ items: e }) {
         ),
       });
 }
-function yn(e = 3e3) {
-  const [t, l] = j.useState(null);
-  j.useEffect(() => {
+function useTimedMessage(e = 3e3) {
+  const [t, l] = hookRuntime.useState(null);
+  hookRuntime.useEffect(() => {
     if (!t) return;
     const u = window.setTimeout(() => l(null), e);
     return () => window.clearTimeout(u);
   }, [e, t]);
-  const a = j.useCallback((u) => {
+  const a = hookRuntime.useCallback((u) => {
       l(u);
     }, []),
-    n = j.useCallback(() => {
+    n = hookRuntime.useCallback(() => {
       l(null);
     }, []);
   return { message: t, showMessage: a, clearMessage: n };
@@ -1570,24 +1595,24 @@ const contentTypeOptions = [
   Qc = { fileName: "", path: "", type: "MANUAL" },
   allowedFileExtensions = ".pdf,.docx,.txt,.md",
   messageDurationMs = 3e3,
-  sortContentDocuments = (e, t) => Bu(e.updatedAt, t.updatedAt) || Bu(e.createdAt, t.createdAt);
+  sortContentDocumentList = (e, t) => sortDescendingByTimestamp(e.updatedAt, t.updatedAt) || sortDescendingByTimestamp(e.createdAt, t.createdAt);
 function ContentManagementView({ documents: e }) {
   var Z, ue;
-  const t = j.useRef(null),
-    l = e.slice().sort(sortContentDocuments),
-    [a, n] = j.useState({ keyword: "", type: "ALL" }),
-    [u, i] = j.useState(""),
-    [s, f] = j.useState(() => l),
-    [r, b] = j.useState(((Z = l[0]) == null ? void 0 : Z.id) ?? ""),
-    [y, h] = j.useState(!1),
-    [m, A] = j.useState(!1),
-    [N, R] = j.useState("CREATE"),
-    [o, d] = j.useState(null),
-    v = yn(messageDurationMs),
-    g = yn(messageDurationMs),
-    [E, C] = j.useState(""),
-    [T, D] = j.useState(Qc),
-    S = j.useMemo(() => {
+  const t = hookRuntime.useRef(null),
+    l = e.slice().sort(sortContentDocumentList),
+    [a, n] = hookRuntime.useState({ keyword: "", type: "ALL" }),
+    [u, i] = hookRuntime.useState(""),
+    [s, f] = hookRuntime.useState(() => l),
+    [r, b] = hookRuntime.useState(((Z = l[0]) == null ? void 0 : Z.id) ?? ""),
+    [y, h] = hookRuntime.useState(!1),
+    [m, A] = hookRuntime.useState(!1),
+    [N, R] = hookRuntime.useState("CREATE"),
+    [o, d] = hookRuntime.useState(null),
+    v = useTimedMessage(messageDurationMs),
+    g = useTimedMessage(messageDurationMs),
+    [E, C] = hookRuntime.useState(""),
+    [T, D] = hookRuntime.useState(Qc),
+    S = hookRuntime.useMemo(() => {
       const M = a.keyword.trim().toLowerCase();
       return s
         .filter((X) => {
@@ -1598,7 +1623,7 @@ function ContentManagementView({ documents: e }) {
             Pe = a.type === "ALL" || X.type === a.type;
           return il && Pe;
         })
-        .sort(sortContentDocuments);
+        .sort(sortContentDocumentList);
     }, [a.keyword, a.type, s]),
     _ = S.find((M) => M.id === r) ?? S[0] ?? null,
     te =
@@ -1644,7 +1669,7 @@ function ContentManagementView({ documents: e }) {
         const Pe = [
           { ...M, status: "ACTIVE", createdAt: X, updatedAt: X },
           ...s,
-        ].sort(sortContentDocuments);
+        ].sort(sortContentDocumentList);
         (f(Pe), b(M.id), v.showMessage("문서 업로드가 완료되었습니다."));
       } else
         (f((il) =>
@@ -1673,7 +1698,7 @@ function ContentManagementView({ documents: e }) {
                 ],
               };
             })
-            .sort(sortContentDocuments),
+            .sort(sortContentDocumentList),
         ),
           b(o),
           v.showMessage("문서가 수정되었습니다."));
@@ -1683,7 +1708,7 @@ function ContentManagementView({ documents: e }) {
       _ &&
         (f((M) => {
           var il;
-          const X = M.filter((Pe) => Pe.id !== _.id).sort(sortContentDocuments);
+          const X = M.filter((Pe) => Pe.id !== _.id).sort(sortContentDocumentList);
           return (b(((il = X[0]) == null ? void 0 : il.id) ?? ""), X);
         }),
         A(!1),
@@ -1707,19 +1732,19 @@ function ContentManagementView({ documents: e }) {
         ? [{ key: "content-error", tone: "error", message: g.message }]
         : []),
     ];
-  return c.jsxs("div", {
+  return jsxRuntime.jsxs("div", {
     className: "page-content page-content--fill content-page",
     children: [
-      c.jsx(ToastStack, { items: Y }),
-      c.jsxs("div", {
+      jsxRuntime.jsx(ToastStack, { items: Y }),
+      jsxRuntime.jsxs("div", {
         className: "content-grid",
         children: [
-          c.jsxs("section", {
+          jsxRuntime.jsxs("section", {
             className: "content-table-card",
             children: [
-              c.jsx(SectionHeader, {
+              jsxRuntime.jsx(SectionHeader, {
                 title: "문서 목록",
-                actions: c.jsx("button", {
+                actions: jsxRuntime.jsx("button", {
                   type: "button",
                   className: "primary-button",
                   onClick: se,
@@ -1728,28 +1753,28 @@ function ContentManagementView({ documents: e }) {
                 className:
                   "content-table-card__header content-table-card__header--list",
               }),
-              c.jsxs("form", {
+              jsxRuntime.jsxs("form", {
                 className:
                   "content-toolbar content-toolbar--content content-table-card__toolbar",
                 onSubmit: (M) => {
                   (M.preventDefault(), De());
                 },
                 children: [
-                  c.jsxs("label", {
+                  jsxRuntime.jsxs("label", {
                     className:
                       "field content-toolbar__field content-toolbar__field--select",
                     children: [
-                      c.jsx("span", {
+                      jsxRuntime.jsx("span", {
                         className: "field__label",
                         children: "문서 유형",
                       }),
-                      c.jsx("select", {
+                      jsxRuntime.jsx("select", {
                         className: "field__input",
                         value: a.type,
                         onChange: (M) =>
                           n((X) => ({ ...X, type: M.target.value })),
                         children: contentTypeOptions.map((M) =>
-                          c.jsx(
+                          jsxRuntime.jsx(
                             "option",
                             { value: M.value, children: M.label },
                             M.value,
@@ -1758,15 +1783,15 @@ function ContentManagementView({ documents: e }) {
                       }),
                     ],
                   }),
-                  c.jsxs("label", {
+                  jsxRuntime.jsxs("label", {
                     className:
                       "field content-toolbar__field content-toolbar__field--search",
                     children: [
-                      c.jsx("span", {
+                      jsxRuntime.jsx("span", {
                         className: "field__label",
                         children: "문서명 검색",
                       }),
-                      c.jsx("input", {
+                      jsxRuntime.jsx("input", {
                         className: "field__input",
                         type: "search",
                         value: u,
@@ -1775,15 +1800,15 @@ function ContentManagementView({ documents: e }) {
                       }),
                     ],
                   }),
-                  c.jsxs("div", {
+                  jsxRuntime.jsxs("div", {
                     className: "content-toolbar__actions",
                     children: [
-                      c.jsx("button", {
+                      jsxRuntime.jsx("button", {
                         type: "submit",
                         className: "primary-button content-toolbar__button",
                         children: "검색",
                       }),
-                      c.jsx("button", {
+                      jsxRuntime.jsx("button", {
                         type: "button",
                         className: "secondary-button content-toolbar__button",
                         onClick: Q,
@@ -1793,35 +1818,35 @@ function ContentManagementView({ documents: e }) {
                   }),
                 ],
               }),
-              c.jsx("div", {
+              jsxRuntime.jsx("div", {
                 className: "content-table-scroll",
-                children: c.jsxs("table", {
+                children: jsxRuntime.jsxs("table", {
                   className: "content-table",
                   children: [
-                    c.jsx("thead", {
-                      children: c.jsxs("tr", {
+                    jsxRuntime.jsx("thead", {
+                      children: jsxRuntime.jsxs("tr", {
                         children: [
-                          c.jsx("th", { children: "문서명" }),
-                          c.jsx("th", { children: "유형" }),
-                          c.jsx("th", { children: "등록자" }),
-                          c.jsx("th", { children: "등록일" }),
-                          c.jsx("th", { children: "수정일" }),
-                          c.jsx("th", { children: "상태" }),
+                          jsxRuntime.jsx("th", { children: "문서명" }),
+                          jsxRuntime.jsx("th", { children: "유형" }),
+                          jsxRuntime.jsx("th", { children: "등록자" }),
+                          jsxRuntime.jsx("th", { children: "등록일" }),
+                          jsxRuntime.jsx("th", { children: "수정일" }),
+                          jsxRuntime.jsx("th", { children: "상태" }),
                         ],
                       }),
                     }),
-                    c.jsx("tbody", {
+                    jsxRuntime.jsx("tbody", {
                       children:
                         S.length === 0
-                          ? c.jsx("tr", {
-                              children: c.jsx("td", {
+                          ? jsxRuntime.jsx("tr", {
+                              children: jsxRuntime.jsx("td", {
                                 colSpan: 6,
                                 className: "content-empty",
                                 children: "조건에 맞는 문서가 없습니다.",
                               }),
                             })
                           : S.map((M) =>
-                              c.jsxs(
+                              jsxRuntime.jsxs(
                                 "tr",
                                 {
                                   className:
@@ -1830,27 +1855,27 @@ function ContentManagementView({ documents: e }) {
                                       : "",
                                   onClick: () => b(M.id),
                                   children: [
-                                    c.jsxs("td", {
+                                    jsxRuntime.jsxs("td", {
                                       children: [
-                                        c.jsx("div", {
+                                        jsxRuntime.jsx("div", {
                                           className: "content-table__title",
                                           children: M.name,
                                         }),
-                                        c.jsx("div", {
+                                        jsxRuntime.jsx("div", {
                                           className: "content-table__sub",
                                           children: M.path,
                                         }),
                                       ],
                                     }),
-                                    c.jsx("td", {
+                                    jsxRuntime.jsx("td", {
                                       children:
                                         M.type === "MANUAL" ? "매뉴얼" : "FAQ",
                                     }),
-                                    c.jsx("td", { children: M.author }),
-                                    c.jsx("td", { children: M.createdAt }),
-                                    c.jsx("td", { children: M.updatedAt }),
-                                    c.jsx("td", {
-                                      children: c.jsx("span", {
+                                    jsxRuntime.jsx("td", { children: M.author }),
+                                    jsxRuntime.jsx("td", { children: M.createdAt }),
+                                    jsxRuntime.jsx("td", { children: M.updatedAt }),
+                                    jsxRuntime.jsx("td", {
+                                      children: jsxRuntime.jsx("span", {
                                         className: `status-badge status-badge--${M.status.toLowerCase()}`,
                                         children: contentStatusLabels[M.status],
                                       }),
@@ -1866,66 +1891,66 @@ function ContentManagementView({ documents: e }) {
               }),
             ],
           }),
-          c.jsx(DetailFrame, {
+          jsxRuntime.jsx(DetailFrame, {
             className: "content-detail-card",
             title: "문서 상세",
             actions: _
-              ? c.jsx("span", {
+              ? jsxRuntime.jsx("span", {
                   className: `status-badge status-badge--${_.status.toLowerCase()}`,
                   children: contentStatusLabels[_.status],
                 })
               : null,
             children: _
-              ? c.jsxs("div", {
+              ? jsxRuntime.jsxs("div", {
                   className: "content-detail-scroll",
                   children: [
-                    c.jsx("div", {
+                    jsxRuntime.jsx("div", {
                       className: "content-detail__name-card",
-                      children: c.jsxs("div", {
+                      children: jsxRuntime.jsxs("div", {
                         className: "content-detail__identity",
                         children: [
-                          c.jsx("h3", {
+                          jsxRuntime.jsx("h3", {
                             className: "content-detail__title",
                             children: _.name,
                           }),
-                          c.jsx("span", {
+                          jsxRuntime.jsx("span", {
                             className: "content-detail__type-pill",
                             children: _.type === "MANUAL" ? "매뉴얼" : "FAQ",
                           }),
                         ],
                       }),
                     }),
-                    c.jsxs("dl", {
+                    jsxRuntime.jsxs("dl", {
                       className: "content-detail__list",
                       children: [
-                        c.jsxs("div", {
+                        jsxRuntime.jsxs("div", {
                           children: [
-                            c.jsx("dt", { children: "저장 경로" }),
-                            c.jsx("dd", { children: _.path }),
+                            jsxRuntime.jsx("dt", { children: "저장 경로" }),
+                            jsxRuntime.jsx("dd", { children: _.path }),
                           ],
                         }),
-                        c.jsxs("div", {
+                        jsxRuntime.jsxs("div", {
                           children: [
-                            c.jsx("dt", { children: "파일 크기" }),
-                            c.jsx("dd", { children: _.fileSize }),
+                            jsxRuntime.jsx("dt", { children: "파일 크기" }),
+                            jsxRuntime.jsx("dd", { children: _.fileSize }),
                           ],
                         }),
-                        c.jsxs("div", {
+                        jsxRuntime.jsxs("div", {
                           children: [
-                            c.jsx("dt", { children: "등록자" }),
-                            c.jsx("dd", { children: _.author }),
+                            jsxRuntime.jsx("dt", { children: "등록자" }),
+                            jsxRuntime.jsx("dd", { children: _.author }),
                           ],
                         }),
-                        c.jsxs("div", {
+                        jsxRuntime.jsxs("div", {
                           children: [
-                            c.jsx("dt", { children: "등록일" }),
-                            c.jsx("dd", { children: _.createdAt }),
+                            jsxRuntime.jsx("dt", { children: "등록일" }),
+                            jsxRuntime.jsx("dd", { children: _.createdAt }),
                           ],
                         }),
-                        c.jsxs("div", {
+                        jsxRuntime.jsxs("div", {
                           children: [
-                            c.jsx("dt", { children: "수정자" }),
-                            c.jsx("dd", {
+                            jsxRuntime.jsx("dt", { children: "수정자" }),
+                            jsxRuntime.jsx("dd", {
                               children:
                                 ((ue = _.history[0]) == null
                                   ? void 0
@@ -1933,30 +1958,30 @@ function ContentManagementView({ documents: e }) {
                             }),
                           ],
                         }),
-                        c.jsxs("div", {
+                        jsxRuntime.jsxs("div", {
                           children: [
-                            c.jsx("dt", { children: "수정일" }),
-                            c.jsx("dd", { children: _.updatedAt }),
+                            jsxRuntime.jsx("dt", { children: "수정일" }),
+                            jsxRuntime.jsx("dd", { children: _.updatedAt }),
                           ],
                         }),
                       ],
                     }),
-                    c.jsxs("div", {
+                    jsxRuntime.jsxs("div", {
                       className: "content-detail-actions",
                       children: [
-                        c.jsx("button", {
+                        jsxRuntime.jsx("button", {
                           type: "button",
                           className: "secondary-button",
                           onClick: $,
                           children: "다운로드",
                         }),
-                        c.jsx("button", {
+                        jsxRuntime.jsx("button", {
                           type: "button",
                           className: "secondary-button",
                           onClick: xe,
                           children: "수정",
                         }),
-                        c.jsx("button", {
+                        jsxRuntime.jsx("button", {
                           type: "button",
                           className: "danger-button",
                           onClick: () => A(!0),
@@ -1964,18 +1989,18 @@ function ContentManagementView({ documents: e }) {
                         }),
                       ],
                     }),
-                    c.jsxs("section", {
+                    jsxRuntime.jsxs("section", {
                       className: "content-history",
                       children: [
-                        c.jsx("h4", { children: "변경 이력" }),
-                        c.jsx("ul", {
+                        jsxRuntime.jsx("h4", { children: "변경 이력" }),
+                        jsxRuntime.jsx("ul", {
                           children: _.history.map((M) =>
-                            c.jsxs(
+                            jsxRuntime.jsxs(
                               "li",
                               {
                                 children: [
-                                  c.jsx("strong", { children: M.version }),
-                                  c.jsxs("span", {
+                                  jsxRuntime.jsx("strong", { children: M.version }),
+                                  jsxRuntime.jsxs("span", {
                                     children: [
                                       M.actor,
                                       " · ",
@@ -1984,7 +2009,7 @@ function ContentManagementView({ documents: e }) {
                                       M.occurredAt,
                                     ],
                                   }),
-                                  c.jsx("p", { children: M.reason }),
+                                  jsxRuntime.jsx("p", { children: M.reason }),
                                 ],
                               },
                               M.id,
@@ -1995,7 +2020,7 @@ function ContentManagementView({ documents: e }) {
                     }),
                   ],
                 })
-              : c.jsx("div", {
+              : jsxRuntime.jsx("div", {
                   className: "content-empty content-empty--detail",
                   children: "선택한 문서가 없습니다.",
                 }),
@@ -2003,20 +2028,20 @@ function ContentManagementView({ documents: e }) {
         ],
       }),
       y
-        ? c.jsxs(nl, {
+        ? jsxRuntime.jsxs(nl, {
             title: N === "EDIT" ? "문서 수정 업로드" : "문서 업로드",
             ariaLabel: N === "EDIT" ? "문서 수정 업로드" : "문서 업로드",
             onClose: x,
             size: "lg",
-            footer: c.jsxs(c.Fragment, {
+            footer: jsxRuntime.jsxs(jsxRuntime.Fragment, {
               children: [
-                c.jsx("button", {
+                jsxRuntime.jsx("button", {
                   type: "button",
                   className: "secondary-button",
                   onClick: x,
                   children: "취소",
                 }),
-                c.jsx("button", {
+                jsxRuntime.jsx("button", {
                   type: "button",
                   className: "primary-button",
                   onClick: z,
@@ -2026,14 +2051,14 @@ function ContentManagementView({ documents: e }) {
               ],
             }),
             children: [
-              c.jsxs("label", {
+              jsxRuntime.jsxs("label", {
                 className: "field",
                 children: [
-                  c.jsx("span", {
+                  jsxRuntime.jsx("span", {
                     className: "field__label",
                     children: "파일 선택 *",
                   }),
-                  c.jsx("input", {
+                  jsxRuntime.jsx("input", {
                     ref: t,
                     className: "field__input content-file-input",
                     type: "file",
@@ -2043,20 +2068,20 @@ function ContentManagementView({ documents: e }) {
                       return O((X = M.target.files) == null ? void 0 : X[0]);
                     },
                   }),
-                  c.jsx("span", {
+                  jsxRuntime.jsx("span", {
                     className: "content-file-name",
                     children: E ? `선택한 파일: ${E}` : "파일을 선택해 주세요.",
                   }),
                 ],
               }),
-              c.jsxs("label", {
+              jsxRuntime.jsxs("label", {
                 className: "field",
                 children: [
-                  c.jsx("span", {
+                  jsxRuntime.jsx("span", {
                     className: "field__label",
                     children: "저장 경로",
                   }),
-                  c.jsx("input", {
+                  jsxRuntime.jsx("input", {
                     className: "field__input",
                     value: T.path,
                     onChange: (M) => D((X) => ({ ...X, path: M.target.value })),
@@ -2064,20 +2089,20 @@ function ContentManagementView({ documents: e }) {
                   }),
                 ],
               }),
-              c.jsxs("label", {
+              jsxRuntime.jsxs("label", {
                 className: "field",
                 children: [
-                  c.jsx("span", {
+                  jsxRuntime.jsx("span", {
                     className: "field__label",
                     children: "문서 유형",
                   }),
-                  c.jsxs("select", {
+                  jsxRuntime.jsxs("select", {
                     className: "field__input",
                     value: T.type,
                     onChange: (M) => D((X) => ({ ...X, type: M.target.value })),
                     children: [
-                      c.jsx("option", { value: "MANUAL", children: "매뉴얼" }),
-                      c.jsx("option", { value: "FAQ", children: "FAQ" }),
+                      jsxRuntime.jsx("option", { value: "MANUAL", children: "매뉴얼" }),
+                      jsxRuntime.jsx("option", { value: "FAQ", children: "FAQ" }),
                     ],
                   }),
                 ],
@@ -2086,20 +2111,20 @@ function ContentManagementView({ documents: e }) {
           })
         : null,
       m
-        ? c.jsx(nl, {
+        ? jsxRuntime.jsx(nl, {
             title: "문서 삭제 확인",
             ariaLabel: "문서 삭제 확인",
             onClose: () => A(!1),
             size: "sm",
-            footer: c.jsxs(c.Fragment, {
+            footer: jsxRuntime.jsxs(jsxRuntime.Fragment, {
               children: [
-                c.jsx("button", {
+                jsxRuntime.jsx("button", {
                   type: "button",
                   className: "secondary-button",
                   onClick: () => A(!1),
                   children: "취소",
                 }),
-                c.jsx("button", {
+                jsxRuntime.jsx("button", {
                   type: "button",
                   className: "danger-button",
                   onClick: U,
@@ -2107,7 +2132,7 @@ function ContentManagementView({ documents: e }) {
                 }),
               ],
             }),
-            children: c.jsx("p", {
+            children: jsxRuntime.jsx("p", {
               className: "content-confirm",
               children:
                 "문서를 삭제하면 목록에서 사라집니다. 복구 작업은 별도로 제공되지 않습니다.",
@@ -2125,19 +2150,19 @@ function ListPanel({
   className: n,
   children: u,
 }) {
-  return c.jsxs("section", {
+  return jsxRuntime.jsxs("section", {
     className: `list-panel${n ? ` ${n}` : ""}`,
     children: [
-      c.jsx(SectionHeader, { title: e, actions: t, className: "list-panel__header" }),
+      jsxRuntime.jsx(SectionHeader, { title: e, actions: t, className: "list-panel__header" }),
       l
-        ? c.jsx("div", { className: "list-panel__toolbar", children: l })
+        ? jsxRuntime.jsx("div", { className: "list-panel__toolbar", children: l })
         : null,
-      c.jsx("div", { className: "list-panel__body", children: u }),
-      a ? c.jsx("div", { className: "list-panel__footer", children: a }) : null,
+      jsxRuntime.jsx("div", { className: "list-panel__body", children: u }),
+      a ? jsxRuntime.jsx("div", { className: "list-panel__footer", children: a }) : null,
     ],
   });
 }
-function ny(e, t) {
+function buildPaginationRange(e, t) {
   if (t <= 7) return Array.from({ length: t }, (u, i) => i + 1);
   const l = [1];
   e > 4 && l.push(null);
@@ -2149,12 +2174,12 @@ function ny(e, t) {
 function Pagination({ page: e, totalPages: t, onChange: l }) {
   const a = Math.max(1, t),
     n = Math.min(Math.max(e, 1), a),
-    u = ny(n, a);
-  return c.jsxs("nav", {
+    u = buildPaginationRange(n, a);
+  return jsxRuntime.jsxs("nav", {
     className: "pagination",
     "aria-label": "페이지네이션",
     children: [
-      c.jsx("button", {
+      jsxRuntime.jsx("button", {
         type: "button",
         className: "pagination__button",
         disabled: n === 1,
@@ -2163,7 +2188,7 @@ function Pagination({ page: e, totalPages: t, onChange: l }) {
       }),
       u.map((i, s) =>
         i === null
-          ? c.jsx(
+          ? jsxRuntime.jsx(
               "span",
               {
                 className: "pagination__ellipsis",
@@ -2172,7 +2197,7 @@ function Pagination({ page: e, totalPages: t, onChange: l }) {
               },
               `ellipsis-${s}`,
             )
-          : c.jsx(
+          : jsxRuntime.jsx(
               "button",
               {
                 type: "button",
@@ -2184,7 +2209,7 @@ function Pagination({ page: e, totalPages: t, onChange: l }) {
               i,
             ),
       ),
-      c.jsx("button", {
+      jsxRuntime.jsx("button", {
         type: "button",
         className: "pagination__button",
         disabled: n === a,
@@ -2194,7 +2219,7 @@ function Pagination({ page: e, totalPages: t, onChange: l }) {
     ],
   });
 }
-const Ys = () =>
+const getCurrentTimestamp = () =>
     new Date().toLocaleString("sv-SE").slice(0, 16).replace("T", " "),
   cacheQaRecords = [
     {
@@ -2395,7 +2420,7 @@ const Ys = () =>
     return n;
   },
   createCacheQaEntry = async (e, t = "관리자") => {
-    const l = Ys();
+    const l = getCurrentTimestamp();
     return {
       id: `cache-${Date.now()}`,
       question: e.question.trim(),
@@ -2410,7 +2435,7 @@ const Ys = () =>
     };
   },
   updateCacheQaEntry = async (e, t, l = "관리자") => {
-    const a = Ys();
+    const a = getCurrentTimestamp();
     return {
       ...e,
       question: t.question.trim(),
@@ -2421,40 +2446,40 @@ const Ys = () =>
     };
   },
   toggleCacheQaEntryStatus = async (e, t, l = "관리자") => {
-    const a = Ys();
+    const a = getCurrentTimestamp();
     return { ...e, status: t, updatedAt: a, updatedBy: l };
   },
-  Gc = 10,
-  Sr = 500,
-  Ar = 2e3,
-  xr = 3e3,
-  Er = { ACTIVE: "활성", INACTIVE: "비활성" },
-  dy = [
+  CACHE_QA_PAGE_SIZE = 10,
+  CACHE_QA_QUESTION_MAX_LENGTH = 500,
+  CACHE_QA_ANSWER_MAX_LENGTH = 2e3,
+  CACHE_QA_MESSAGE_DURATION_MS = 3e3,
+  cacheQaStatusLabels = { ACTIVE: "활성", INACTIVE: "비활성" },
+  cacheQaStatusOptions = [
     { label: "전체", value: "ALL" },
     { label: "활성", value: "ACTIVE" },
     { label: "비활성", value: "INACTIVE" },
   ],
-  Hl = { question: "", answer: "", status: "ACTIVE" },
-  ql = (e, t) => Bu(e.createdAt, t.createdAt);
+  EMPTY_CACHE_QA_FORM = { question: "", answer: "", status: "ACTIVE" },
+  sortCacheQaEntriesByCreatedAt = (e, t) => sortDescendingByTimestamp(e.createdAt, t.createdAt);
 function CacheAnswerManagementView({ items: e }) {
   var $;
-  const [t, l] = j.useState(e.slice().sort(ql)),
-    [a, n] = j.useState({ keyword: "", status: "ALL" }),
-    [u, i] = j.useState(""),
-    [s, f] = j.useState((($ = e[0]) == null ? void 0 : $.id) ?? null),
-    [r, b] = j.useState(1),
-    [y, h] = j.useState(!1),
-    [m, A] = j.useState("CREATE"),
-    [N, R] = j.useState(null),
-    [o, d] = j.useState(Hl),
-    v = yn(xr),
-    g = yn(xr),
-    [E, C] = j.useState(!1),
-    T = j.useMemo(() => {
-      const O = mr(a.keyword);
+  const [t, l] = hookRuntime.useState(e.slice().sort(sortCacheQaEntriesByCreatedAt)),
+    [a, n] = hookRuntime.useState({ keyword: "", status: "ALL" }),
+    [u, i] = hookRuntime.useState(""),
+    [s, f] = hookRuntime.useState((($ = e[0]) == null ? void 0 : $.id) ?? null),
+    [r, b] = hookRuntime.useState(1),
+    [y, h] = hookRuntime.useState(!1),
+    [m, A] = hookRuntime.useState("CREATE"),
+    [N, R] = hookRuntime.useState(null),
+    [o, d] = hookRuntime.useState(EMPTY_CACHE_QA_FORM),
+    v = useTimedMessage(CACHE_QA_MESSAGE_DURATION_MS),
+    g = useTimedMessage(CACHE_QA_MESSAGE_DURATION_MS),
+    [E, C] = hookRuntime.useState(!1),
+    T = hookRuntime.useMemo(() => {
+      const O = normalizeSearchKeyword(a.keyword);
       return t
         .map((Y) => {
-          const Z = mr(Y.question),
+          const Z = normalizeSearchKeyword(Y.question),
             ue = O.length === 0 || Z.includes(O) || O.includes(Z),
             M =
               O.length === 0
@@ -2478,17 +2503,17 @@ function CacheAnswerManagementView({ items: e }) {
         .sort((Y, Z) =>
           O.length > 0 && Z.score !== Y.score
             ? Z.score - Y.score
-            : ql(Y.item, Z.item),
+            : sortCacheQaEntriesByCreatedAt(Y.item, Z.item),
         )
         .map(({ item: Y }) => Y);
     }, [a.keyword, a.status, t]),
-    D = Math.max(1, Math.ceil(T.length / Gc)),
-    S = T.slice((r - 1) * Gc, r * Gc),
+    D = Math.max(1, Math.ceil(T.length / CACHE_QA_PAGE_SIZE)),
+    S = T.slice((r - 1) * CACHE_QA_PAGE_SIZE, r * CACHE_QA_PAGE_SIZE),
     _ = T.find((O) => O.id === s) ?? null;
-  (j.useEffect(() => {
+  (hookRuntime.useEffect(() => {
     b((O) => Math.min(O, D));
   }, [D]),
-    j.useEffect(() => {
+    hookRuntime.useEffect(() => {
       if (T.length === 0) {
         f(null);
         return;
@@ -2496,7 +2521,7 @@ function CacheAnswerManagementView({ items: e }) {
       (!s || !T.some((O) => O.id === s)) && f(T[0].id);
     }, [T, s]));
   const te = () => {
-      (A("CREATE"), R(null), d(Hl), g.clearMessage(), h(!0));
+      (A("CREATE"), R(null), d(EMPTY_CACHE_QA_FORM), g.clearMessage(), h(!0));
     },
     De = () => {
       _ &&
@@ -2526,10 +2551,10 @@ function CacheAnswerManagementView({ items: e }) {
       }
       if (m === "CREATE") {
         const ue = await createCacheQaEntry(o);
-        (l((M) => [ue, ...M].sort(ql)),
+        (l((M) => [ue, ...M].sort(sortCacheQaEntriesByCreatedAt)),
           f(ue.id),
           v.showMessage("답변이 등록되었습니다."),
-          d(Hl),
+          d(EMPTY_CACHE_QA_FORM),
           Q());
         return;
       }
@@ -2543,10 +2568,10 @@ function CacheAnswerManagementView({ items: e }) {
         return;
       }
       const Z = await updateCacheQaEntry(Y, o);
-      (l((ue) => ue.map((M) => (M.id === N ? Z : M)).sort(ql)),
+      (l((ue) => ue.map((M) => (M.id === N ? Z : M)).sort(sortCacheQaEntriesByCreatedAt)),
         f(Z.id),
         v.showMessage("답변이 수정되었습니다."),
-        d(Hl),
+        d(EMPTY_CACHE_QA_FORM),
         A("CREATE"),
         R(null),
         Q());
@@ -2555,7 +2580,7 @@ function CacheAnswerManagementView({ items: e }) {
       if (!_) return;
       const O = _.status === "ACTIVE" ? "INACTIVE" : "ACTIVE",
         Y = await toggleCacheQaEntryStatus(_, O);
-      (l((Z) => Z.map((ue) => (ue.id === Y.id ? Y : ue)).sort(ql)),
+      (l((Z) => Z.map((ue) => (ue.id === Y.id ? Y : ue)).sort(sortCacheQaEntriesByCreatedAt)),
         f(Y.id),
         v.showMessage(
           O === "ACTIVE"
@@ -2567,19 +2592,19 @@ function CacheAnswerManagementView({ items: e }) {
       _ &&
         (l((O) => {
           var Z;
-          const Y = O.filter((ue) => ue.id !== _.id).sort(ql);
+          const Y = O.filter((ue) => ue.id !== _.id).sort(sortCacheQaEntriesByCreatedAt);
           return (f(((Z = Y[0]) == null ? void 0 : Z.id) ?? null), Y);
         }),
         C(!1),
         v.showMessage("답변이 삭제되었습니다."),
         A("CREATE"),
         R(null),
-        d(Hl));
+        d(EMPTY_CACHE_QA_FORM));
     };
-  return c.jsxs("div", {
+  return jsxRuntime.jsxs("div", {
     className: "cache-qa-layout",
     children: [
-      c.jsx(ToastStack, {
+      jsxRuntime.jsx(ToastStack, {
         items: [
           v.message
             ? { key: "cache-qa-success", tone: "success", message: v.message }
@@ -2589,32 +2614,32 @@ function CacheAnswerManagementView({ items: e }) {
             : null,
         ].filter((O) => !!O),
       }),
-      c.jsxs("div", {
+      jsxRuntime.jsxs("div", {
         className: "cache-qa-grid",
         children: [
-          c.jsx(ListPanel, {
+          jsxRuntime.jsx(ListPanel, {
             className: "cache-qa-list-card",
             title: "캐시 답변 목록",
-            actions: c.jsx("button", {
+            actions: jsxRuntime.jsx("button", {
               type: "button",
               className: "primary-button",
               onClick: te,
               children: "캐시 답변 등록",
             }),
-            toolbar: c.jsxs("form", {
+            toolbar: jsxRuntime.jsxs("form", {
               className: "cache-qa-toolbar",
               onSubmit: (O) => {
                 (O.preventDefault(), xe());
               },
               children: [
-                c.jsxs("label", {
+                jsxRuntime.jsxs("label", {
                   className: "field cache-qa-field",
                   children: [
-                    c.jsx("span", {
+                    jsxRuntime.jsx("span", {
                       className: "field__label",
                       children: "질문 검색",
                     }),
-                    c.jsx("input", {
+                    jsxRuntime.jsx("input", {
                       className: "field__input",
                       type: "search",
                       placeholder: "2자 이상 입력 권장",
@@ -2623,21 +2648,21 @@ function CacheAnswerManagementView({ items: e }) {
                     }),
                   ],
                 }),
-                c.jsxs("label", {
+                jsxRuntime.jsxs("label", {
                   className: "field cache-qa-field",
                   children: [
-                    c.jsx("span", {
+                    jsxRuntime.jsx("span", {
                       className: "field__label",
                       children: "상태",
                     }),
-                    c.jsx("select", {
+                    jsxRuntime.jsx("select", {
                       className: "field__input",
                       value: a.status,
                       onChange: (O) => {
                         (n((Y) => ({ ...Y, status: O.target.value })), b(1));
                       },
-                      children: dy.map((O) =>
-                        c.jsx(
+                      children: cacheQaStatusOptions.map((O) =>
+                        jsxRuntime.jsx(
                           "option",
                           { value: O.value, children: O.label },
                           O.value,
@@ -2646,15 +2671,15 @@ function CacheAnswerManagementView({ items: e }) {
                     }),
                   ],
                 }),
-                c.jsxs("div", {
+                jsxRuntime.jsxs("div", {
                   className: "cache-qa-toolbar__actions",
                   children: [
-                    c.jsx("button", {
+                    jsxRuntime.jsx("button", {
                       type: "submit",
                       className: "primary-button",
                       children: "검색",
                     }),
-                    c.jsx("button", {
+                    jsxRuntime.jsx("button", {
                       type: "button",
                       className: "secondary-button",
                       onClick: se,
@@ -2664,31 +2689,31 @@ function CacheAnswerManagementView({ items: e }) {
                 }),
               ],
             }),
-            footer: c.jsx(Pagination, { page: r, totalPages: D, onChange: b }),
-            children: c.jsx("div", {
+            footer: jsxRuntime.jsx(Pagination, { page: r, totalPages: D, onChange: b }),
+            children: jsxRuntime.jsx("div", {
               className: "list-panel__scroll cache-qa-list-scroll",
               children:
                 S.length === 0
-                  ? c.jsx("div", {
+                  ? jsxRuntime.jsx("div", {
                       className: "list-panel__empty",
                       children: "조건에 맞는 답변이 없습니다.",
                     })
-                  : c.jsxs("table", {
+                  : jsxRuntime.jsxs("table", {
                       className: "content-table cache-qa-table",
                       children: [
-                        c.jsx("thead", {
-                          children: c.jsxs("tr", {
+                        jsxRuntime.jsx("thead", {
+                          children: jsxRuntime.jsxs("tr", {
                             children: [
-                              c.jsx("th", { children: "질문" }),
-                              c.jsx("th", { children: "상태" }),
-                              c.jsx("th", { children: "등록일" }),
-                              c.jsx("th", { children: "수정일" }),
+                              jsxRuntime.jsx("th", { children: "질문" }),
+                              jsxRuntime.jsx("th", { children: "상태" }),
+                              jsxRuntime.jsx("th", { children: "등록일" }),
+                              jsxRuntime.jsx("th", { children: "수정일" }),
                             ],
                           }),
                         }),
-                        c.jsx("tbody", {
+                        jsxRuntime.jsx("tbody", {
                           children: S.map((O) =>
-                            c.jsxs(
+                            jsxRuntime.jsxs(
                               "tr",
                               {
                                 className:
@@ -2697,20 +2722,20 @@ function CacheAnswerManagementView({ items: e }) {
                                     : "",
                                 onClick: () => f(O.id),
                                 children: [
-                                  c.jsx("td", {
-                                    children: c.jsx("div", {
+                                  jsxRuntime.jsx("td", {
+                                    children: jsxRuntime.jsx("div", {
                                       className: "content-table__title",
                                       children: O.question,
                                     }),
                                   }),
-                                  c.jsx("td", {
-                                    children: c.jsx("span", {
+                                  jsxRuntime.jsx("td", {
+                                    children: jsxRuntime.jsx("span", {
                                       className: `status-badge status-badge--${O.status.toLowerCase()}`,
-                                      children: Er[O.status],
+                                      children: cacheQaStatusLabels[O.status],
                                     }),
                                   }),
-                                  c.jsx("td", { children: O.createdAt }),
-                                  c.jsx("td", { children: O.updatedAt }),
+                                  jsxRuntime.jsx("td", { children: O.createdAt }),
+                                  jsxRuntime.jsx("td", { children: O.updatedAt }),
                                 ],
                               },
                               O.id,
@@ -2721,54 +2746,54 @@ function CacheAnswerManagementView({ items: e }) {
                     }),
             }),
           }),
-          c.jsx("aside", {
+          jsxRuntime.jsx("aside", {
             className: "cache-qa-side",
-            children: c.jsx(DetailFrame, {
+            children: jsxRuntime.jsx(DetailFrame, {
               className: "cache-qa-detail-card",
               title: "상세 정보",
               actions: _
-                ? c.jsx("span", {
+                ? jsxRuntime.jsx("span", {
                     className: `status-badge status-badge--${_.status.toLowerCase()}`,
-                    children: Er[_.status],
+                    children: cacheQaStatusLabels[_.status],
                   })
                 : null,
               children: _
-                ? c.jsxs("div", {
+                ? jsxRuntime.jsxs("div", {
                     className: "cache-qa-detail-scroll",
                     children: [
-                      c.jsxs("div", {
+                      jsxRuntime.jsxs("div", {
                         className: "feedback-conversation-section",
                         children: [
-                          c.jsx("p", {
+                          jsxRuntime.jsx("p", {
                             className: "feedback-conversation-label",
                             children: "대화 내용",
                           }),
-                          c.jsxs("div", {
+                          jsxRuntime.jsxs("div", {
                             className: "cache-qa-conversation",
                             children: [
-                              c.jsxs("div", {
+                              jsxRuntime.jsxs("div", {
                                 className:
                                   "feedback-conversation__turn feedback-conversation__turn--user",
                                 children: [
-                                  c.jsx("p", {
+                                  jsxRuntime.jsx("p", {
                                     className: "feedback-conversation__speaker",
                                     children: "질문",
                                   }),
-                                  c.jsx("p", {
+                                  jsxRuntime.jsx("p", {
                                     className: "feedback-conversation__message",
                                     children: _.question,
                                   }),
                                 ],
                               }),
-                              c.jsxs("div", {
+                              jsxRuntime.jsxs("div", {
                                 className:
                                   "feedback-conversation__turn feedback-conversation__turn--bot",
                                 children: [
-                                  c.jsx("p", {
+                                  jsxRuntime.jsx("p", {
                                     className: "feedback-conversation__speaker",
                                     children: "답변",
                                   }),
-                                  c.jsx("p", {
+                                  jsxRuntime.jsx("p", {
                                     className: "feedback-conversation__message",
                                     children: _.answer,
                                   }),
@@ -2778,53 +2803,53 @@ function CacheAnswerManagementView({ items: e }) {
                           }),
                         ],
                       }),
-                      c.jsxs("dl", {
+                      jsxRuntime.jsxs("dl", {
                         className: "content-detail__list cache-qa-meta",
                         children: [
-                          c.jsxs("div", {
+                          jsxRuntime.jsxs("div", {
                             children: [
-                              c.jsx("dt", { children: "등록자" }),
-                              c.jsx("dd", { children: _.createdBy }),
+                              jsxRuntime.jsx("dt", { children: "등록자" }),
+                              jsxRuntime.jsx("dd", { children: _.createdBy }),
                             ],
                           }),
-                          c.jsxs("div", {
+                          jsxRuntime.jsxs("div", {
                             children: [
-                              c.jsx("dt", { children: "등록일" }),
-                              c.jsx("dd", { children: _.createdAt }),
+                              jsxRuntime.jsx("dt", { children: "등록일" }),
+                              jsxRuntime.jsx("dd", { children: _.createdAt }),
                             ],
                           }),
-                          c.jsxs("div", {
+                          jsxRuntime.jsxs("div", {
                             children: [
-                              c.jsx("dt", { children: "수정자" }),
-                              c.jsx("dd", { children: _.updatedBy }),
+                              jsxRuntime.jsx("dt", { children: "수정자" }),
+                              jsxRuntime.jsx("dd", { children: _.updatedBy }),
                             ],
                           }),
-                          c.jsxs("div", {
+                          jsxRuntime.jsxs("div", {
                             children: [
-                              c.jsx("dt", { children: "수정일" }),
-                              c.jsx("dd", { children: _.updatedAt }),
+                              jsxRuntime.jsx("dt", { children: "수정일" }),
+                              jsxRuntime.jsx("dd", { children: _.updatedAt }),
                             ],
                           }),
-                          c.jsxs("div", {
+                          jsxRuntime.jsxs("div", {
                             children: [
-                              c.jsx("dt", { children: "캐시 조회 수" }),
-                              c.jsx("dd", {
+                              jsxRuntime.jsx("dt", { children: "캐시 조회 수" }),
+                              jsxRuntime.jsx("dd", {
                                 children: _.hitCount.toLocaleString(),
                               }),
                             ],
                           }),
                         ],
                       }),
-                      c.jsxs("div", {
+                      jsxRuntime.jsxs("div", {
                         className: "cache-qa-detail-actions",
                         children: [
-                          c.jsx("button", {
+                          jsxRuntime.jsx("button", {
                             type: "button",
                             className: "secondary-button",
                             onClick: De,
                             children: "수정",
                           }),
-                          c.jsx("button", {
+                          jsxRuntime.jsx("button", {
                             type: "button",
                             className: "primary-button",
                             onClick: z,
@@ -2832,7 +2857,7 @@ function CacheAnswerManagementView({ items: e }) {
                             children:
                               _.status === "ACTIVE" ? "비활성화" : "활성화",
                           }),
-                          c.jsx("button", {
+                          jsxRuntime.jsx("button", {
                             type: "button",
                             className: "danger-button",
                             onClick: () => C(!0),
@@ -2842,7 +2867,7 @@ function CacheAnswerManagementView({ items: e }) {
                       }),
                     ],
                   })
-                : c.jsx("div", {
+                : jsxRuntime.jsx("div", {
                     className: "list-panel__empty cache-qa-empty",
                     children: "답변을 선택하면 상세 정보가 표시됩니다.",
                   }),
@@ -2851,23 +2876,23 @@ function CacheAnswerManagementView({ items: e }) {
         ],
       }),
       y
-        ? c.jsx(nl, {
+        ? jsxRuntime.jsx(nl, {
             title: m === "EDIT" ? "캐시 답변 수정" : "캐시 답변 등록",
             ariaLabel: m === "EDIT" ? "캐시 답변 수정" : "캐시 답변 등록",
             onClose: Q,
             size: "xl",
             footerClassName: "modal__footer--split",
-            footer: c.jsxs(c.Fragment, {
+            footer: jsxRuntime.jsxs(jsxRuntime.Fragment, {
               children: [
-                c.jsx("button", {
+                jsxRuntime.jsx("button", {
                   type: "button",
                   className: "secondary-button",
                   onClick: () => {
-                    (Q(), d(Hl), A("CREATE"), R(null));
+                    (Q(), d(EMPTY_CACHE_QA_FORM), A("CREATE"), R(null));
                   },
                   children: "초기화",
                 }),
-                c.jsx("button", {
+                jsxRuntime.jsx("button", {
                   type: "button",
                   className: "primary-button",
                   onClick: x,
@@ -2875,70 +2900,70 @@ function CacheAnswerManagementView({ items: e }) {
                 }),
               ],
             }),
-            children: c.jsxs("div", {
+            children: jsxRuntime.jsxs("div", {
               className: "cache-qa-form cache-qa-form--modal",
               children: [
-                c.jsxs("label", {
+                jsxRuntime.jsxs("label", {
                   className: "field",
                   children: [
-                    c.jsx("span", {
+                    jsxRuntime.jsx("span", {
                       className: "field__label",
                       children: "질문 *",
                     }),
-                    c.jsx("textarea", {
+                    jsxRuntime.jsx("textarea", {
                       className:
                         "field__input knowledge-textarea cache-qa-textarea",
                       rows: 3,
-                      maxLength: Sr,
+                      maxLength: CACHE_QA_QUESTION_MAX_LENGTH,
                       value: o.question,
                       placeholder: "캐시 답변용 질문을 입력해 주세요.",
                       onChange: (O) =>
                         d((Y) => ({ ...Y, question: O.target.value })),
                     }),
-                    c.jsxs("p", {
+                    jsxRuntime.jsxs("p", {
                       className: "cache-qa-form__counter",
-                      children: [o.question.length, "/", Sr, "자"],
+                      children: [o.question.length, "/", CACHE_QA_QUESTION_MAX_LENGTH, "자"],
                     }),
                   ],
                 }),
-                c.jsxs("label", {
+                jsxRuntime.jsxs("label", {
                   className: "field",
                   children: [
-                    c.jsx("span", {
+                    jsxRuntime.jsx("span", {
                       className: "field__label",
                       children: "답변 *",
                     }),
-                    c.jsx("textarea", {
+                    jsxRuntime.jsx("textarea", {
                       className:
                         "field__input knowledge-textarea cache-qa-textarea",
                       rows: 6,
-                      maxLength: Ar,
+                      maxLength: CACHE_QA_ANSWER_MAX_LENGTH,
                       value: o.answer,
                       placeholder: "캐시 답변으로 반환할 답변을 입력해 주세요.",
                       onChange: (O) =>
                         d((Y) => ({ ...Y, answer: O.target.value })),
                     }),
-                    c.jsxs("p", {
+                    jsxRuntime.jsxs("p", {
                       className: "cache-qa-form__counter",
-                      children: [o.answer.length, "/", Ar, "자"],
+                      children: [o.answer.length, "/", CACHE_QA_ANSWER_MAX_LENGTH, "자"],
                     }),
                   ],
                 }),
-                c.jsxs("label", {
+                jsxRuntime.jsxs("label", {
                   className: "field",
                   children: [
-                    c.jsx("span", {
+                    jsxRuntime.jsx("span", {
                       className: "field__label",
                       children: "상태",
                     }),
-                    c.jsxs("select", {
+                    jsxRuntime.jsxs("select", {
                       className: "field__input",
                       value: o.status,
                       onChange: (O) =>
                         d((Y) => ({ ...Y, status: O.target.value })),
                       children: [
-                        c.jsx("option", { value: "ACTIVE", children: "활성" }),
-                        c.jsx("option", {
+                        jsxRuntime.jsx("option", { value: "ACTIVE", children: "활성" }),
+                        jsxRuntime.jsx("option", {
                           value: "INACTIVE",
                           children: "비활성",
                         }),
@@ -2947,7 +2972,7 @@ function CacheAnswerManagementView({ items: e }) {
                   ],
                 }),
                 g.message
-                  ? c.jsx("p", {
+                  ? jsxRuntime.jsx("p", {
                       className: "content-error",
                       children: g.message,
                     })
@@ -2957,22 +2982,22 @@ function CacheAnswerManagementView({ items: e }) {
           })
         : null,
       E
-        ? c.jsx(nl, {
+        ? jsxRuntime.jsx(nl, {
             title: "캐시 답변 삭제 확인",
             ariaLabel: "캐시 답변 삭제 확인",
             onClose: () => C(!1),
             size: "sm",
             compact: !0,
             footerClassName: "modal__footer--split",
-            footer: c.jsxs(c.Fragment, {
+            footer: jsxRuntime.jsxs(jsxRuntime.Fragment, {
               children: [
-                c.jsx("button", {
+                jsxRuntime.jsx("button", {
                   type: "button",
                   className: "secondary-button",
                   onClick: () => C(!1),
                   children: "취소",
                 }),
-                c.jsx("button", {
+                jsxRuntime.jsx("button", {
                   type: "button",
                   className: "danger-button",
                   onClick: U,
@@ -2980,7 +3005,7 @@ function CacheAnswerManagementView({ items: e }) {
                 }),
               ],
             }),
-            children: c.jsx("p", {
+            children: jsxRuntime.jsx("p", {
               className: "content-confirm",
               children: "선택한 답변을 삭제하면 캐시 답변에서 즉시 제외됩니다.",
             }),
@@ -2989,7 +3014,7 @@ function CacheAnswerManagementView({ items: e }) {
     ],
   });
 }
-const knowledgeDocuments = [
+const knowledgeDocumentList = [
   {
     id: "kdoc-001",
     name: "챗봇 운영 매뉴얼",
@@ -3016,10 +3041,10 @@ const knowledgeDocuments = [
   },
 ];
 async function loadKnowledgeDocuments() {
-  return { documents: knowledgeDocuments };
+  return { documents: knowledgeDocumentList };
 }
 async function executeKnowledgeQuery(e) {
-  const t = knowledgeDocuments.find((l) => l.id === e.documentId);
+  const t = knowledgeDocumentList.find((l) => l.id === e.documentId);
   return t
     ? {
         answer: `"${e.question}"에 대한 응답입니다.선택하신 문서(${t.name})를 기반으로 관련 내용을 조회한 결과, 해당 내용에 대한 예시 응답을 생성했습니다. 실제 API 연동 시에는 정확한 문맥을 기준으로 응답합니다.`,
@@ -3030,11 +3055,11 @@ async function executeKnowledgeQuery(e) {
     : null;
 }
 function KnowledgeQueryView({ documents: e }) {
-  const [t, l] = j.useState({ question: "", documentType: "", documentId: "" }),
-    [a, n] = j.useState("IDLE"),
-    [u, i] = j.useState(null),
-    [s, f] = j.useState(!1),
-    r = j.useMemo(
+  const [t, l] = hookRuntime.useState({ question: "", documentType: "", documentId: "" }),
+    [a, n] = hookRuntime.useState("IDLE"),
+    [u, i] = hookRuntime.useState(null),
+    [s, f] = hookRuntime.useState(!1),
+    r = hookRuntime.useMemo(
       () => (t.documentType ? e.filter((o) => o.type === t.documentType) : e),
       [t.documentType, e],
     ),
@@ -3067,56 +3092,56 @@ function KnowledgeQueryView({ documents: e }) {
           (f(!0), setTimeout(() => f(!1), 2e3));
         });
     };
-  return c.jsx("div", {
+  return jsxRuntime.jsx("div", {
     className: "knowledge-layout",
-    children: c.jsxs("div", {
+    children: jsxRuntime.jsxs("div", {
       className: "knowledge-grid",
       children: [
-        c.jsxs("section", {
+        jsxRuntime.jsxs("section", {
           className: "panel panel--main",
           children: [
-            c.jsx(SectionHeader, { title: "조회 조건" }),
-            c.jsxs("div", {
+            jsxRuntime.jsx(SectionHeader, { title: "조회 조건" }),
+            jsxRuntime.jsxs("div", {
               className: "knowledge-form",
               children: [
-                c.jsxs("label", {
+                jsxRuntime.jsxs("label", {
                   className: "field",
                   children: [
-                    c.jsx("span", {
+                    jsxRuntime.jsx("span", {
                       className: "field__label",
                       children: "문서 유형 *",
                     }),
-                    c.jsxs("select", {
+                    jsxRuntime.jsxs("select", {
                       className: "field__input",
                       value: t.documentType,
                       onChange: (o) => h(o.target.value),
                       children: [
-                        c.jsx("option", { value: "", children: "선택하세요" }),
-                        c.jsx("option", {
+                        jsxRuntime.jsx("option", { value: "", children: "선택하세요" }),
+                        jsxRuntime.jsx("option", {
                           value: "MANUAL",
                           children: "매뉴얼",
                         }),
-                        c.jsx("option", { value: "FAQ", children: "FAQ" }),
+                        jsxRuntime.jsx("option", { value: "FAQ", children: "FAQ" }),
                       ],
                     }),
                   ],
                 }),
-                c.jsxs("label", {
+                jsxRuntime.jsxs("label", {
                   className: "field",
                   children: [
-                    c.jsx("span", {
+                    jsxRuntime.jsx("span", {
                       className: "field__label",
                       children: "테스트 문서 *",
                     }),
-                    c.jsxs("select", {
+                    jsxRuntime.jsxs("select", {
                       className: "field__input",
                       value: t.documentId,
                       disabled: !t.documentType,
                       onChange: (o) => l({ ...t, documentId: o.target.value }),
                       children: [
-                        c.jsx("option", { value: "", children: "선택하세요" }),
+                        jsxRuntime.jsx("option", { value: "", children: "선택하세요" }),
                         r.map((o) =>
-                          c.jsx(
+                          jsxRuntime.jsx(
                             "option",
                             { value: o.id, children: o.name },
                             o.id,
@@ -3126,14 +3151,14 @@ function KnowledgeQueryView({ documents: e }) {
                     }),
                   ],
                 }),
-                c.jsxs("label", {
+                jsxRuntime.jsxs("label", {
                   className: "field",
                   children: [
-                    c.jsx("span", {
+                    jsxRuntime.jsx("span", {
                       className: "field__label",
                       children: "질문 입력 *",
                     }),
-                    c.jsx("textarea", {
+                    jsxRuntime.jsx("textarea", {
                       className: "field__input knowledge-textarea",
                       value: t.question,
                       maxLength: 1e3,
@@ -3143,24 +3168,24 @@ function KnowledgeQueryView({ documents: e }) {
                     }),
                   ],
                 }),
-                c.jsxs("div", {
+                jsxRuntime.jsxs("div", {
                   className: "knowledge-action-row",
                   children: [
-                    c.jsx("button", {
+                    jsxRuntime.jsx("button", {
                       type: "button",
                       className: "secondary-button",
                       disabled: !y,
                       onClick: N,
                       children: "초기화",
                     }),
-                    c.jsx("button", {
+                    jsxRuntime.jsx("button", {
                       type: "button",
                       className: "primary-button",
                       disabled: !b || a === "LOADING",
                       onClick: m,
                       children: a === "LOADING" ? "조회 중" : "조회",
                     }),
-                    c.jsx("button", {
+                    jsxRuntime.jsx("button", {
                       type: "button",
                       className: "secondary-button",
                       onClick: A,
@@ -3172,58 +3197,58 @@ function KnowledgeQueryView({ documents: e }) {
             }),
           ],
         }),
-        c.jsxs(DetailFrame, {
+        jsxRuntime.jsxs(DetailFrame, {
           className: "panel panel--main",
           title: "조회 결과",
           children: [
             a === "IDLE" &&
-              c.jsx("div", {
+              jsxRuntime.jsx("div", {
                 className: "knowledge-result-empty",
                 children: "조건을 입력한 뒤 조회를 시작해 주세요.",
               }),
             a === "LOADING" &&
-              c.jsx("div", {
+              jsxRuntime.jsx("div", {
                 className: "knowledge-result-empty",
                 children: "조회 중입니다.",
               }),
             a === "EMPTY" &&
-              c.jsx("div", {
+              jsxRuntime.jsx("div", {
                 className: "knowledge-result-empty",
                 children: "선택한 문서에서 일치하는 답변을 찾지 못했습니다.",
               }),
             a === "ERROR" &&
-              c.jsx("div", {
+              jsxRuntime.jsx("div", {
                 className: "knowledge-result-empty",
                 children: "조회에 실패했습니다. 다시 시도해 주세요.",
               }),
             a === "SUCCESS" &&
               u &&
-              c.jsxs("div", {
+              jsxRuntime.jsxs("div", {
                 className: "knowledge-result-scroll",
                 children: [
-                  c.jsxs("div", {
+                  jsxRuntime.jsxs("div", {
                     className: "knowledge-answer",
                     children: [
-                      c.jsx("p", {
+                      jsxRuntime.jsx("p", {
                         className: "knowledge-answer__text",
                         children: u.answer,
                       }),
-                      c.jsxs("p", {
+                      jsxRuntime.jsxs("p", {
                         className: "knowledge-answer__meta",
                         children: ["생성 시각: ", u.generatedAt],
                       }),
                     ],
                   }),
-                  c.jsxs("dl", {
+                  jsxRuntime.jsxs("dl", {
                     className: "content-detail__list knowledge-reference",
                     children: [
-                      c.jsxs("div", {
+                      jsxRuntime.jsxs("div", {
                         children: [
-                          c.jsx("dt", { children: "참조 문서" }),
-                          c.jsxs("dd", {
+                          jsxRuntime.jsx("dt", { children: "참조 문서" }),
+                          jsxRuntime.jsxs("dd", {
                             children: [
                               u.referenceDocument.name,
-                              c.jsx("span", {
+                              jsxRuntime.jsx("span", {
                                 className: "knowledge-ref-type",
                                 children:
                                   u.referenceDocument.type === "MANUAL"
@@ -3234,23 +3259,23 @@ function KnowledgeQueryView({ documents: e }) {
                           }),
                         ],
                       }),
-                      c.jsxs("div", {
+                      jsxRuntime.jsxs("div", {
                         children: [
-                          c.jsx("dt", { children: "저장 경로" }),
-                          c.jsx("dd", { children: u.referenceDocument.path }),
+                          jsxRuntime.jsx("dt", { children: "저장 경로" }),
+                          jsxRuntime.jsx("dd", { children: u.referenceDocument.path }),
                         ],
                       }),
-                      c.jsxs("div", {
+                      jsxRuntime.jsxs("div", {
                         children: [
-                          c.jsx("dt", { children: "참조 단락" }),
-                          c.jsx("dd", { children: u.referenceParagraph }),
+                          jsxRuntime.jsx("dt", { children: "참조 단락" }),
+                          jsxRuntime.jsx("dd", { children: u.referenceParagraph }),
                         ],
                       }),
                     ],
                   }),
-                  c.jsx("div", {
+                  jsxRuntime.jsx("div", {
                     className: "knowledge-footer",
-                    children: c.jsx("button", {
+                    children: jsxRuntime.jsx("button", {
                       type: "button",
                       className: "secondary-button",
                       onClick: R,
@@ -3266,36 +3291,36 @@ function KnowledgeQueryView({ documents: e }) {
   });
 }
 const feedbackReactionLabels = { POSITIVE: "긍정", NEGATIVE: "부정" },
-  by = [
+  feedbackReactionOptions = [
     { label: "전체", value: "ALL" },
     { label: "긍정", value: "POSITIVE" },
     { label: "부정", value: "NEGATIVE" },
   ],
-  Xc = (e) => new Date(e.replace(" ", "T")),
-  gy = (e) => `${e}T00:00:00`,
-  py = (e) => `${e}T23:59:59.999`,
-  _y = (e, t) => {
+  parseDateTimeString = (e) => new Date(e.replace(" ", "T")),
+  withStartOfDay = (e) => `${e}T00:00:00`,
+  withEndOfDay = (e) => `${e}T23:59:59.999`,
+  isWithinDateRange = (e, t) => {
     if (!t.startDate && !t.endDate) return !0;
-    const l = Xc(e).getTime(),
-      a = t.startDate ? Xc(gy(t.startDate)).getTime() : null,
-      n = t.endDate ? Xc(py(t.endDate)).getTime() : null;
+    const l = parseDateTimeString(e).getTime(),
+      a = t.startDate ? parseDateTimeString(withStartOfDay(t.startDate)).getTime() : null,
+      n = t.endDate ? parseDateTimeString(withEndOfDay(t.endDate)).getTime() : null;
     return a !== null && n !== null && a > n
       ? l >= n && l <= a
       : !((a !== null && l < a) || (n !== null && l > n));
   },
-  Sy = (e, t) => Bu(e.createdAt, t.createdAt);
+  sortFeedbackRecordsByCreatedAt = (e, t) => sortDescendingByTimestamp(e.createdAt, t.createdAt);
 function FeedbackManagementView({ feedbacks: e }) {
-  const [t, l] = j.useState({ reaction: "ALL" }),
-    [a, n] = j.useState({ startDate: "", endDate: "" }),
-    [u, i] = j.useState({ startDate: "", endDate: "" }),
-    [s, f] = j.useState(null),
-    r = j.useMemo(
+  const [t, l] = hookRuntime.useState({ reaction: "ALL" }),
+    [a, n] = hookRuntime.useState({ startDate: "", endDate: "" }),
+    [u, i] = hookRuntime.useState({ startDate: "", endDate: "" }),
+    [s, f] = hookRuntime.useState(null),
+    r = hookRuntime.useMemo(
       () =>
         e
           .filter((m) => t.reaction === "ALL" || m.reaction === t.reaction)
-          .filter((m) => _y(m.createdAt, u))
+          .filter((m) => isWithinDateRange(m.createdAt, u))
           .slice()
-          .sort(Sy),
+          .sort(sortFeedbackRecordsByCreatedAt),
       [u, e, t.reaction],
     ),
     b = r.find((m) => m.id === s) ?? r[0] ?? null,
@@ -3306,36 +3331,36 @@ function FeedbackManagementView({ feedbacks: e }) {
       const m = { startDate: "", endDate: "" };
       (n(m), i(m));
     };
-  return c.jsx("div", {
+  return jsxRuntime.jsx("div", {
     className: "feedback-layout",
-    children: c.jsxs("div", {
+    children: jsxRuntime.jsxs("div", {
       className: "feedback-grid",
       children: [
-        c.jsxs("section", {
+        jsxRuntime.jsxs("section", {
           className: "feedback-list-card",
           children: [
-            c.jsx(SectionHeader, {
+            jsxRuntime.jsx(SectionHeader, {
               title: "피드백 목록",
               className: "feedback-list-header",
             }),
-            c.jsxs("div", {
+            jsxRuntime.jsxs("div", {
               className: "feedback-filter-bar",
               children: [
-                c.jsxs("div", {
+                jsxRuntime.jsxs("div", {
                   className: "feedback-filter-field",
                   children: [
-                    c.jsx("label", {
+                    jsxRuntime.jsx("label", {
                       className: "field__label",
                       htmlFor: "feedback-reaction-filter",
                       children: "유형",
                     }),
-                    c.jsx("select", {
+                    jsxRuntime.jsx("select", {
                       id: "feedback-reaction-filter",
                       className: "field__input feedback-filter-select",
                       value: t.reaction,
                       onChange: (m) => l({ reaction: m.target.value }),
-                      children: by.map((m) =>
-                        c.jsx(
+                      children: feedbackReactionOptions.map((m) =>
+                        jsxRuntime.jsx(
                           "option",
                           { value: m.value, children: m.label },
                           m.value,
@@ -3344,18 +3369,18 @@ function FeedbackManagementView({ feedbacks: e }) {
                     }),
                   ],
                 }),
-                c.jsxs("div", {
+                jsxRuntime.jsxs("div", {
                   className: "feedback-range-actions",
                   children: [
-                    c.jsxs("div", {
+                    jsxRuntime.jsxs("div", {
                       className: "feedback-range-field",
                       children: [
-                        c.jsx("label", {
+                        jsxRuntime.jsx("label", {
                           className: "field__label",
                           htmlFor: "feedback-range-start",
                           children: "시작일",
                         }),
-                        c.jsx("input", {
+                        jsxRuntime.jsx("input", {
                           id: "feedback-range-start",
                           type: "date",
                           className: "field__input feedback-range-input",
@@ -3365,20 +3390,20 @@ function FeedbackManagementView({ feedbacks: e }) {
                         }),
                       ],
                     }),
-                    c.jsx("span", {
+                    jsxRuntime.jsx("span", {
                       className: "feedback-range-divider",
                       "aria-hidden": "true",
                       children: "~",
                     }),
-                    c.jsxs("div", {
+                    jsxRuntime.jsxs("div", {
                       className: "feedback-range-field",
                       children: [
-                        c.jsx("label", {
+                        jsxRuntime.jsx("label", {
                           className: "field__label",
                           htmlFor: "feedback-range-end",
                           children: "종료일",
                         }),
-                        c.jsx("input", {
+                        jsxRuntime.jsx("input", {
                           id: "feedback-range-end",
                           type: "date",
                           className: "field__input feedback-range-input",
@@ -3388,16 +3413,16 @@ function FeedbackManagementView({ feedbacks: e }) {
                         }),
                       ],
                     }),
-                    c.jsxs("div", {
+                    jsxRuntime.jsxs("div", {
                       className: "feedback-range-buttons",
                       children: [
-                        c.jsx("button", {
+                        jsxRuntime.jsx("button", {
                           type: "button",
                           className: "primary-button feedback-range-button",
                           onClick: y,
                           children: "검색",
                         }),
-                        c.jsx("button", {
+                        jsxRuntime.jsx("button", {
                           type: "button",
                           className: "secondary-button feedback-range-button",
                           onClick: h,
@@ -3409,34 +3434,34 @@ function FeedbackManagementView({ feedbacks: e }) {
                 }),
               ],
             }),
-            c.jsx("div", {
+            jsxRuntime.jsx("div", {
               className: "feedback-list-scroll",
-              children: c.jsxs("table", {
+              children: jsxRuntime.jsxs("table", {
                 className: "content-table",
                 children: [
-                  c.jsx("thead", {
-                    children: c.jsxs("tr", {
+                  jsxRuntime.jsx("thead", {
+                    children: jsxRuntime.jsxs("tr", {
                       children: [
-                        c.jsx("th", { children: "작성일시" }),
-                        c.jsx("th", { children: "단지명" }),
-                        c.jsx("th", { children: "사용자" }),
-                        c.jsx("th", { children: "반응" }),
-                        c.jsx("th", { children: "부정사유" }),
+                        jsxRuntime.jsx("th", { children: "작성일시" }),
+                        jsxRuntime.jsx("th", { children: "단지명" }),
+                        jsxRuntime.jsx("th", { children: "사용자" }),
+                        jsxRuntime.jsx("th", { children: "반응" }),
+                        jsxRuntime.jsx("th", { children: "부정사유" }),
                       ],
                     }),
                   }),
-                  c.jsx("tbody", {
+                  jsxRuntime.jsx("tbody", {
                     children:
                       r.length === 0
-                        ? c.jsx("tr", {
-                            children: c.jsx("td", {
+                        ? jsxRuntime.jsx("tr", {
+                            children: jsxRuntime.jsx("td", {
                               colSpan: 5,
                               className: "content-empty",
                               children: "조건에 맞는 피드백이 없습니다.",
                             }),
                           })
                         : r.map((m) =>
-                            c.jsxs(
+                            jsxRuntime.jsxs(
                               "tr",
                               {
                                 className:
@@ -3445,16 +3470,16 @@ function FeedbackManagementView({ feedbacks: e }) {
                                     : "",
                                 onClick: () => f(m.id),
                                 children: [
-                                  c.jsx("td", { children: m.createdAt }),
-                                  c.jsx("td", { children: m.complexName }),
-                                  c.jsx("td", { children: m.userId }),
-                                  c.jsx("td", {
-                                    children: c.jsx("span", {
+                                  jsxRuntime.jsx("td", { children: m.createdAt }),
+                                  jsxRuntime.jsx("td", { children: m.complexName }),
+                                  jsxRuntime.jsx("td", { children: m.userId }),
+                                  jsxRuntime.jsx("td", {
+                                    children: jsxRuntime.jsx("span", {
                                       className: `feedback-reaction-badge feedback-reaction-badge--${m.reaction.toLowerCase()}`,
                                       children: feedbackReactionLabels[m.reaction],
                                     }),
                                   }),
-                                  c.jsx("td", {
+                                  jsxRuntime.jsx("td", {
                                     children: m.hasNegativeReason
                                       ? "있음"
                                       : "-",
@@ -3470,33 +3495,33 @@ function FeedbackManagementView({ feedbacks: e }) {
             }),
           ],
         }),
-        c.jsx(DetailFrame, {
+        jsxRuntime.jsx(DetailFrame, {
           className: "feedback-detail-card",
           title: "피드백 상세",
           actions: b
-            ? c.jsx("span", {
+            ? jsxRuntime.jsx("span", {
                 className: `feedback-reaction-badge feedback-reaction-badge--${b.reaction.toLowerCase()}`,
                 children: feedbackReactionLabels[b.reaction],
               })
             : null,
           children:
             b === null
-              ? c.jsx("div", {
+              ? jsxRuntime.jsx("div", {
                   className: "content-empty content-empty--detail",
                   children: "피드백을 선택하면 상세 정보가 표시됩니다.",
                 })
-              : c.jsxs("div", {
+              : jsxRuntime.jsxs("div", {
                   className: "feedback-detail-scroll",
                   children: [
-                    c.jsx(SectionHeader, {
-                      title: c.jsxs("div", {
+                    jsxRuntime.jsx(SectionHeader, {
+                      title: jsxRuntime.jsxs("div", {
                         className: "feedback-detail-identity",
                         children: [
-                          c.jsx("span", {
+                          jsxRuntime.jsx("span", {
                             className: "feedback-detail-identity__complex",
                             children: b.complexName,
                           }),
-                          c.jsx("span", {
+                          jsxRuntime.jsx("span", {
                             className: "feedback-detail-identity__user",
                             children: b.userId,
                           }),
@@ -3506,22 +3531,22 @@ function FeedbackManagementView({ feedbacks: e }) {
                         "detail-frame__header feedback-detail-identity-header",
                       titleAs: "h3",
                     }),
-                    c.jsxs("div", {
+                    jsxRuntime.jsxs("div", {
                       className: "feedback-conversation-section",
                       children: [
-                        c.jsx("p", {
+                        jsxRuntime.jsx("p", {
                           className: "feedback-conversation-label",
                           children: "대화 내용",
                         }),
-                        c.jsx("div", {
+                        jsxRuntime.jsx("div", {
                           className: "feedback-conversation",
                           children: b.conversation.map((m, A) =>
-                            c.jsxs(
+                            jsxRuntime.jsxs(
                               "div",
                               {
                                 className: `feedback-conversation__turn feedback-conversation__turn--${m.speaker.toLowerCase()}`,
                                 children: [
-                                  c.jsxs("p", {
+                                  jsxRuntime.jsxs("p", {
                                     className: "feedback-conversation__speaker",
                                     children: [
                                       m.speaker === "USER" ? "사용자" : "챗봇",
@@ -3529,7 +3554,7 @@ function FeedbackManagementView({ feedbacks: e }) {
                                       m.sentAt,
                                     ],
                                   }),
-                                  c.jsx("p", {
+                                  jsxRuntime.jsx("p", {
                                     className: "feedback-conversation__message",
                                     children: m.message,
                                   }),
@@ -3543,11 +3568,11 @@ function FeedbackManagementView({ feedbacks: e }) {
                     }),
                     b.reaction === "NEGATIVE" &&
                       b.negativeReason &&
-                      c.jsxs("div", {
+                      jsxRuntime.jsxs("div", {
                         className: "feedback-negative-reason",
                         children: [
-                          c.jsx("strong", { children: "부정사유" }),
-                          c.jsx("p", { children: b.negativeReason }),
+                          jsxRuntime.jsx("strong", { children: "부정사유" }),
+                          jsxRuntime.jsx("p", { children: b.negativeReason }),
                         ],
                       }),
                   ],
@@ -3557,7 +3582,7 @@ function FeedbackManagementView({ feedbacks: e }) {
     }),
   });
 }
-const accountRecords = [
+const accountRecordList = [
     {
       id: "chat1004",
       name: "박운영",
@@ -3660,7 +3685,7 @@ const accountRecords = [
     { id: "emp002", name: "박현준", complexCode: "COMPLEX-205" },
     { id: "emp003", name: "한지원", complexCode: "COMPLEX-310" },
   ];
-function calculateAccountStats(e) {
+function buildAccountStatsSummary(e) {
   return {
     total: e.filter((t) => t.status === "ACTIVE").length,
     masters: e.filter((t) => t.role === "MASTER" && t.status === "ACTIVE")
@@ -3671,8 +3696,8 @@ function calculateAccountStats(e) {
   };
 }
 async function loadAccountData() {
-  const e = calculateAccountStats(accountRecords);
-  return { accounts: accountRecords, stats: e };
+  const e = buildAccountStatsSummary(accountRecordList);
+  return { accounts: accountRecordList, stats: e };
 }
 const CURRENT_ACCOUNT_ID = "chat1004",
   accountStatusLabels = { ACTIVE: "활성", INACTIVE: "비활성", LOCKED: "잠금" },
@@ -3684,15 +3709,15 @@ const CURRENT_ACCOUNT_ID = "chat1004",
   },
   jy = 3e3;
 function AccountPermissionManagementView({ accounts: e }) {
-  const [t, l] = j.useState(e),
-    [a, n] = j.useState(null),
-    [u, i] = j.useState(null),
-    [s, f] = j.useState(!1),
-    [r, b] = j.useState(""),
-    [y, h] = j.useState(""),
-    [m, A] = j.useState(null),
-    N = yn(jy),
-    R = j.useMemo(
+  const [t, l] = hookRuntime.useState(e),
+    [a, n] = hookRuntime.useState(null),
+    [u, i] = hookRuntime.useState(null),
+    [s, f] = hookRuntime.useState(!1),
+    [r, b] = hookRuntime.useState(""),
+    [y, h] = hookRuntime.useState(""),
+    [m, A] = hookRuntime.useState(null),
+    N = useTimedMessage(jy),
+    R = hookRuntime.useMemo(
       () => ({
         total: t.filter((S) => S.status === "ACTIVE").length,
         masters: t.filter((S) => S.role === "MASTER" && S.status === "ACTIVE")
@@ -3705,7 +3730,7 @@ function AccountPermissionManagementView({ accounts: e }) {
       [t],
     ),
     o = t.find((S) => S.id === a) ?? null,
-    d = j.useMemo(() => {
+    d = hookRuntime.useMemo(() => {
       const S = y.trim().toLowerCase();
       return S
         ? candidateAccounts.filter(
@@ -3756,27 +3781,27 @@ function AccountPermissionManagementView({ accounts: e }) {
       { label: "OPERATOR", value: `${R.operators}명` },
       { label: "비활성·잠금", value: `${R.inactive}명` },
     ];
-  return c.jsxs("div", {
+  return jsxRuntime.jsxs("div", {
     className: "accounts-layout",
     children: [
-      c.jsx(ToastStack, {
+      jsxRuntime.jsx(ToastStack, {
         items: N.message
           ? [{ key: "accounts-success", tone: "success", message: N.message }]
           : [],
       }),
-      c.jsx("div", {
+      jsxRuntime.jsx("div", {
         className: "accounts-stat-grid",
         children: D.map((S) =>
-          c.jsxs(
+          jsxRuntime.jsxs(
             "div",
             {
               className: "metric-card",
               children: [
-                c.jsx("p", {
+                jsxRuntime.jsx("p", {
                   className: "metric-card__label",
                   children: S.label,
                 }),
-                c.jsx("p", {
+                jsxRuntime.jsx("p", {
                   className: "metric-card__value",
                   children: S.value,
                 }),
@@ -3786,15 +3811,15 @@ function AccountPermissionManagementView({ accounts: e }) {
           ),
         ),
       }),
-      c.jsxs("div", {
+      jsxRuntime.jsxs("div", {
         className: "accounts-grid",
         children: [
-          c.jsxs("section", {
+          jsxRuntime.jsxs("section", {
             className: "accounts-list-card",
             children: [
-              c.jsx(SectionHeader, {
+              jsxRuntime.jsx(SectionHeader, {
                 title: "계정 목록",
-                actions: c.jsx("button", {
+                actions: jsxRuntime.jsx("button", {
                   type: "button",
                   className: "primary-button",
                   onClick: () => f(!0),
@@ -3802,57 +3827,57 @@ function AccountPermissionManagementView({ accounts: e }) {
                 }),
                 className: "panel__header panel__header--compact",
               }),
-              c.jsx("div", {
+              jsxRuntime.jsx("div", {
                 className: "accounts-list-scroll",
-                children: c.jsxs("table", {
+                children: jsxRuntime.jsxs("table", {
                   className: "content-table knowledge-history-table",
                   children: [
-                    c.jsx("thead", {
-                      children: c.jsxs("tr", {
+                    jsxRuntime.jsx("thead", {
+                      children: jsxRuntime.jsxs("tr", {
                         children: [
-                          c.jsx("th", { children: "이름" }),
-                          c.jsx("th", { children: "아이디" }),
-                          c.jsx("th", { children: "권한" }),
-                          c.jsx("th", { children: "상태" }),
-                          c.jsx("th", { children: "최종 로그인" }),
+                          jsxRuntime.jsx("th", { children: "이름" }),
+                          jsxRuntime.jsx("th", { children: "아이디" }),
+                          jsxRuntime.jsx("th", { children: "권한" }),
+                          jsxRuntime.jsx("th", { children: "상태" }),
+                          jsxRuntime.jsx("th", { children: "최종 로그인" }),
                         ],
                       }),
                     }),
-                    c.jsx("tbody", {
+                    jsxRuntime.jsx("tbody", {
                       children: t.map((S) =>
-                        c.jsxs(
+                        jsxRuntime.jsxs(
                           "tr",
                           {
                             className: S.id === a ? "is-selected" : "",
                             onClick: () => n(S.id),
                             children: [
-                              c.jsxs("td", {
+                              jsxRuntime.jsxs("td", {
                                 children: [
-                                  c.jsx("div", {
+                                  jsxRuntime.jsx("div", {
                                     className: "content-table__title",
                                     children: S.name,
                                   }),
                                   T(S.id) &&
-                                    c.jsx("div", {
+                                    jsxRuntime.jsx("div", {
                                       className: "content-table__sub",
                                       children: "본인",
                                     }),
                                 ],
                               }),
-                              c.jsx("td", { children: S.id }),
-                              c.jsx("td", {
-                                children: c.jsx("span", {
+                              jsxRuntime.jsx("td", { children: S.id }),
+                              jsxRuntime.jsx("td", {
+                                children: jsxRuntime.jsx("span", {
                                   className: `status-badge ${S.role === "MASTER" ? "status-badge--active" : "status-badge--processing"}`,
                                   children: accountRoleLabels[S.role],
                                 }),
                               }),
-                              c.jsx("td", {
-                                children: c.jsx("span", {
+                              jsxRuntime.jsx("td", {
+                                children: jsxRuntime.jsx("span", {
                                   className: `status-badge status-badge--${S.status.toLowerCase()}`,
                                   children: accountStatusLabels[S.status],
                                 }),
                               }),
-                              c.jsx("td", { children: S.lastLoginAt ?? "-" }),
+                              jsxRuntime.jsx("td", { children: S.lastLoginAt ?? "-" }),
                             ],
                           },
                           S.id,
@@ -3864,40 +3889,40 @@ function AccountPermissionManagementView({ accounts: e }) {
               }),
             ],
           }),
-          c.jsx(DetailFrame, {
+          jsxRuntime.jsx(DetailFrame, {
             className: "accounts-detail-card",
             title: "계정 상세",
             actions: o
-              ? c.jsx("span", {
+              ? jsxRuntime.jsx("span", {
                   className: `status-badge status-badge--${o.status.toLowerCase()}`,
                   children: accountStatusLabels[o.status],
                 })
               : null,
             children:
               o === null
-                ? c.jsx("div", {
+                ? jsxRuntime.jsx("div", {
                     className: "content-empty content-empty--detail",
                     children: "관리자를 선택하면 상세 정보가 표시됩니다.",
                   })
-                : c.jsxs("div", {
+                : jsxRuntime.jsxs("div", {
                     className: "accounts-detail-scroll",
                     children: [
-                      c.jsx(SectionHeader, {
-                        title: c.jsxs("div", {
+                      jsxRuntime.jsx(SectionHeader, {
+                        title: jsxRuntime.jsxs("div", {
                           className: "accounts-detail-identity",
                           children: [
-                            c.jsx("span", {
+                            jsxRuntime.jsx("span", {
                               className: "accounts-detail-identity__name",
                               children: o.name,
                             }),
-                            c.jsxs("div", {
+                            jsxRuntime.jsxs("div", {
                               className: "accounts-detail-identity__meta",
                               children: [
-                                c.jsx("span", {
+                                jsxRuntime.jsx("span", {
                                   className: "accounts-detail-identity__id",
                                   children: o.id,
                                 }),
-                                c.jsx("span", {
+                                jsxRuntime.jsx("span", {
                                   className: "accounts-detail-identity__role",
                                   children: accountRoleLabels[o.role],
                                 }),
@@ -3909,34 +3934,34 @@ function AccountPermissionManagementView({ accounts: e }) {
                           "detail-frame__header accounts-detail-identity-header",
                         titleAs: "h3",
                       }),
-                      c.jsxs("dl", {
+                      jsxRuntime.jsxs("dl", {
                         className: "content-detail__list",
                         children: [
-                          c.jsxs("div", {
+                          jsxRuntime.jsxs("div", {
                             children: [
-                              c.jsx("dt", { children: "등록일" }),
-                              c.jsx("dd", { children: o.registeredAt }),
+                              jsxRuntime.jsx("dt", { children: "등록일" }),
+                              jsxRuntime.jsx("dd", { children: o.registeredAt }),
                             ],
                           }),
-                          c.jsxs("div", {
+                          jsxRuntime.jsxs("div", {
                             children: [
-                              c.jsx("dt", { children: "최종 로그인" }),
-                              c.jsx("dd", { children: o.lastLoginAt ?? "-" }),
+                              jsxRuntime.jsx("dt", { children: "최종 로그인" }),
+                              jsxRuntime.jsx("dd", { children: o.lastLoginAt ?? "-" }),
                             ],
                           }),
                         ],
                       }),
                       T(o.id)
-                        ? c.jsx("p", {
+                        ? jsxRuntime.jsx("p", {
                             className: "accounts-self-notice",
                             children:
                               "본인 계정은 권한 변경 및 비활성화가 제한됩니다.",
                           })
-                        : c.jsxs("div", {
+                        : jsxRuntime.jsxs("div", {
                             className: "accounts-action-row",
                             children: [
                               o.status === "INACTIVE" &&
-                                c.jsx("button", {
+                                jsxRuntime.jsx("button", {
                                   type: "button",
                                   className: "primary-button",
                                   onClick: () =>
@@ -3949,7 +3974,7 @@ function AccountPermissionManagementView({ accounts: e }) {
                                 }),
                               o.status === "ACTIVE" &&
                                 o.role === "OPERATOR" &&
-                                c.jsx("button", {
+                                jsxRuntime.jsx("button", {
                                   type: "button",
                                   className: "danger-button",
                                   onClick: () =>
@@ -3961,7 +3986,7 @@ function AccountPermissionManagementView({ accounts: e }) {
                                   children: "권한 비활성화",
                                 }),
                               o.status === "LOCKED" &&
-                                c.jsx("button", {
+                                jsxRuntime.jsx("button", {
                                   type: "button",
                                   className: "primary-button",
                                   onClick: () =>
@@ -3974,36 +3999,36 @@ function AccountPermissionManagementView({ accounts: e }) {
                                 }),
                             ],
                           }),
-                      c.jsxs("div", {
+                      jsxRuntime.jsxs("div", {
                         className: "accounts-history",
                         children: [
-                          c.jsx("h4", { children: "로그인 이력" }),
+                          jsxRuntime.jsx("h4", { children: "로그인 이력" }),
                           o.loginHistory.length === 0
-                            ? c.jsx("p", {
+                            ? jsxRuntime.jsx("p", {
                                 className: "accounts-history-empty",
                                 children: "로그인 이력이 없습니다.",
                               })
-                            : c.jsx("ul", {
+                            : jsxRuntime.jsx("ul", {
                                 className: "accounts-history-list",
                                 children: o.loginHistory.map((S) =>
-                                  c.jsxs(
+                                  jsxRuntime.jsxs(
                                     "li",
                                     {
                                       children: [
-                                        c.jsx("strong", {
+                                        jsxRuntime.jsx("strong", {
                                           children: S.occurredAt,
                                         }),
                                         S.success
-                                          ? c.jsx("span", {
+                                          ? jsxRuntime.jsx("span", {
                                               className:
                                                 "accounts-login-success",
                                               children: "성공",
                                             })
-                                          : c.jsx("span", {
+                                          : jsxRuntime.jsx("span", {
                                               className: "accounts-login-fail",
                                               children: "실패",
                                             }),
-                                        c.jsx("span", {
+                                        jsxRuntime.jsx("span", {
                                           className: "accounts-history-ip",
                                           children: S.ip,
                                         }),
@@ -4015,26 +4040,26 @@ function AccountPermissionManagementView({ accounts: e }) {
                               }),
                         ],
                       }),
-                      c.jsxs("div", {
+                      jsxRuntime.jsxs("div", {
                         className: "accounts-history",
                         children: [
-                          c.jsx("h4", { children: "잠금·해제 이력" }),
+                          jsxRuntime.jsx("h4", { children: "잠금·해제 이력" }),
                           o.lockHistory.length === 0
-                            ? c.jsx("p", {
+                            ? jsxRuntime.jsx("p", {
                                 className: "accounts-history-empty",
                                 children: "잠금·해제 이력이 없습니다.",
                               })
-                            : c.jsx("ul", {
+                            : jsxRuntime.jsx("ul", {
                                 className: "accounts-history-list",
                                 children: o.lockHistory.map((S) =>
-                                  c.jsxs(
+                                  jsxRuntime.jsxs(
                                     "li",
                                     {
                                       children: [
-                                        c.jsx("strong", {
+                                        jsxRuntime.jsx("strong", {
                                           children: S.occurredAt,
                                         }),
-                                        c.jsx("span", {
+                                        jsxRuntime.jsx("span", {
                                           className:
                                             S.type === "LOCKED"
                                               ? "accounts-history-status--lock"
@@ -4044,7 +4069,7 @@ function AccountPermissionManagementView({ accounts: e }) {
                                               ? "잠금"
                                               : "해제",
                                         }),
-                                        c.jsxs("p", {
+                                        jsxRuntime.jsxs("p", {
                                           className: "accounts-history-sub",
                                           children: [S.reason, " · ", S.actor],
                                         }),
@@ -4062,20 +4087,20 @@ function AccountPermissionManagementView({ accounts: e }) {
         ],
       }),
       u &&
-        c.jsx(nl, {
+        jsxRuntime.jsx(nl, {
           title: accountActionLabels[u.type],
           ariaLabel: accountActionLabels[u.type],
           onClose: () => i(null),
           size: "sm",
-          footer: c.jsxs(c.Fragment, {
+          footer: jsxRuntime.jsxs(jsxRuntime.Fragment, {
             children: [
-              c.jsx("button", {
+              jsxRuntime.jsx("button", {
                 type: "button",
                 className: "secondary-button",
                 onClick: () => i(null),
                 children: "취소",
               }),
-              c.jsx("button", {
+              jsxRuntime.jsx("button", {
                 type: "button",
                 className:
                   u.type === "DEACTIVATE" ? "danger-button" : "primary-button",
@@ -4085,14 +4110,14 @@ function AccountPermissionManagementView({ accounts: e }) {
               }),
             ],
           }),
-          children: c.jsxs("label", {
+          children: jsxRuntime.jsxs("label", {
             className: "field",
             children: [
-              c.jsx("span", {
+              jsxRuntime.jsx("span", {
                 className: "field__label",
                 children: "사유 입력 *",
               }),
-              c.jsx("textarea", {
+              jsxRuntime.jsx("textarea", {
                 className: "field__input knowledge-textarea",
                 rows: 3,
                 value: u.reason,
@@ -4103,20 +4128,20 @@ function AccountPermissionManagementView({ accounts: e }) {
           }),
         }),
       s &&
-        c.jsxs(nl, {
+        jsxRuntime.jsxs(nl, {
           title: "계정 추가",
           ariaLabel: "계정 추가",
           onClose: E,
           size: "lg",
-          footer: c.jsxs(c.Fragment, {
+          footer: jsxRuntime.jsxs(jsxRuntime.Fragment, {
             children: [
-              c.jsx("button", {
+              jsxRuntime.jsx("button", {
                 type: "button",
                 className: "secondary-button",
                 onClick: E,
                 children: "취소",
               }),
-              c.jsx("button", {
+              jsxRuntime.jsx("button", {
                 type: "button",
                 className: "primary-button",
                 disabled: !m || !r.trim(),
@@ -4126,14 +4151,14 @@ function AccountPermissionManagementView({ accounts: e }) {
             ],
           }),
           children: [
-            c.jsxs("label", {
+            jsxRuntime.jsxs("label", {
               className: "field",
               children: [
-                c.jsx("span", {
+                jsxRuntime.jsx("span", {
                   className: "field__label",
                   children: "사용자 검색",
                 }),
-                c.jsx("input", {
+                jsxRuntime.jsx("input", {
                   className: "field__input",
                   value: y,
                   placeholder: "검색어 입력",
@@ -4141,27 +4166,27 @@ function AccountPermissionManagementView({ accounts: e }) {
                 }),
               ],
             }),
-            c.jsx("ul", {
+            jsxRuntime.jsx("ul", {
               className: "user-candidate-list",
               children:
                 d.length === 0
-                  ? c.jsx("li", {
+                  ? jsxRuntime.jsx("li", {
                       className: "user-candidate-empty",
                       children: "검색 결과가 없습니다.",
                     })
                   : d.map((S) =>
-                      c.jsx(
+                      jsxRuntime.jsx(
                         "li",
                         {
-                          children: c.jsxs("button", {
+                          children: jsxRuntime.jsxs("button", {
                             type: "button",
                             className: `user-candidate-item${(m == null ? void 0 : m.id) === S.id ? " is-selected" : ""}`,
                             onClick: () => A(S),
                             children: [
-                              c.jsxs("span", {
+                              jsxRuntime.jsxs("span", {
                                 children: [S.name, " (", S.id, ")"],
                               }),
-                              c.jsx("span", {
+                              jsxRuntime.jsx("span", {
                                 className: "user-candidate-code",
                                 children: S.complexCode,
                               }),
@@ -4172,14 +4197,14 @@ function AccountPermissionManagementView({ accounts: e }) {
                       ),
                     ),
             }),
-            c.jsxs("label", {
+            jsxRuntime.jsxs("label", {
               className: "field",
               children: [
-                c.jsx("span", {
+                jsxRuntime.jsx("span", {
                   className: "field__label",
                   children: "추가 사유 * (최대 200자)",
                 }),
-                c.jsx("textarea", {
+                jsxRuntime.jsx("textarea", {
                   className: "field__input knowledge-textarea",
                   rows: 2,
                   maxLength: 200,
@@ -4194,7 +4219,7 @@ function AccountPermissionManagementView({ accounts: e }) {
     ],
   });
 }
-const NAV_ITEMS = [
+const navigationItems = [
     {
       key: "dashboard",
       label: "대시보드",
@@ -4232,7 +4257,7 @@ const NAV_ITEMS = [
       roles: ["MASTER"],
     },
   ],
-  ROUTE_META = {
+  routeMetadata = {
     "/": {
       title: "대시보드",
       description: "운영 현황을 한눈에 확인하는 메인 화면입니다.",
@@ -4263,7 +4288,7 @@ const NAV_ITEMS = [
       description: "캐시 응답과 질문을 단위로 관리하는 화면입니다.",
     },
   },
-  feedbackRecords = [
+  feedbackRecordList = [
     {
       id: "fb-001",
       complexName: "한강 아파트",
@@ -4354,48 +4379,47 @@ const NAV_ITEMS = [
     },
   ];
 async function loadFeedbackItems() {
-  return feedbackRecords.slice().sort((e, t) => t.createdAt.localeCompare(e.createdAt));
+  return feedbackRecordList.slice().sort((e, t) => t.createdAt.localeCompare(e.createdAt));
 }
-const Dy = "xperp-mock-auth-stage",
-  Rr = "xperp-mock-authenticated",
-  Cy = "xperp-mock-auth-user",
-  Ry = "xperp-mock-otp-failures",
-  zy = "xperp-mock-otp-locked";
+const AUTH_STATUS_KEY = "xperp-mock-authenticated",
+  AUTH_USER_ID_STORAGE_KEY = "xperp-mock-auth-user",
+  OTP_FAILURE_COUNT_STORAGE_KEY = "xperp-mock-otp-failures",
+  OTP_LOCKED_STORAGE_KEY = "xperp-mock-otp-locked";
 function Sidebar({ currentPath: e, onNavigate: t, onLogout: l }) {
-  const [a, n] = j.useState(!1),
-    u = Mh(),
-    i = NAV_ITEMS.filter((f) => f.roles.includes(u.role)),
+  const [a, n] = hookRuntime.useState(!1),
+    u = loadCurrentAccountProfile(),
+    i = navigationItems.filter((f) => f.roles.includes(u.role)),
     s = () => {
       (typeof window < "u" &&
-        (window.sessionStorage.removeItem(Dy),
-        window.sessionStorage.removeItem(Rr),
-        window.sessionStorage.removeItem(Cy),
-        window.sessionStorage.removeItem(Ry),
-        window.sessionStorage.removeItem(zy),
-        window.localStorage.removeItem(Rr)),
-        Lv(),
+        (window.sessionStorage.removeItem(AUTH_STAGE_KEY),
+        window.sessionStorage.removeItem(AUTH_STATUS_KEY),
+        window.sessionStorage.removeItem(AUTH_USER_ID_STORAGE_KEY),
+        window.sessionStorage.removeItem(OTP_FAILURE_COUNT_STORAGE_KEY),
+        window.sessionStorage.removeItem(OTP_LOCKED_STORAGE_KEY),
+        window.localStorage.removeItem(AUTH_STATUS_KEY)),
+        clearPersistedAccountProfile(),
         n(!1),
         l());
     };
-  return c.jsxs("aside", {
+  return jsxRuntime.jsxs("aside", {
     className: "sidebar",
     children: [
-      c.jsxs("div", {
+      jsxRuntime.jsxs("div", {
         className: "sidebar__brand",
         children: [
-          c.jsx("div", { className: "sidebar__logo", children: "XpERP" }),
-          c.jsx("div", {
+          jsxRuntime.jsx("div", { className: "sidebar__logo", children: "XpERP" }),
+          jsxRuntime.jsx("div", {
             className: "sidebar__badge",
             children: "AI 관리자로",
           }),
         ],
       }),
-      c.jsx("nav", {
+      jsxRuntime.jsx("nav", {
         className: "sidebar__nav",
         "aria-label": "메뉴",
         children: i.map((f) => {
           const r = e === f.href;
-          return c.jsxs(
+          return jsxRuntime.jsxs(
             "button",
             {
               type: "button",
@@ -4403,36 +4427,36 @@ function Sidebar({ currentPath: e, onNavigate: t, onLogout: l }) {
               onClick: () => t(f.href),
               "aria-current": r ? "page" : void 0,
               children: [
-                c.jsx("span", {
+                jsxRuntime.jsx("span", {
                   className: "sidebar__nav-icon",
                   "aria-hidden": "true",
                   children: f.key.slice(0, 1).toUpperCase(),
                 }),
-                c.jsx("span", { children: f.label }),
+                jsxRuntime.jsx("span", { children: f.label }),
               ],
             },
             f.key,
           );
         }),
       }),
-      c.jsxs("div", {
+      jsxRuntime.jsxs("div", {
         className: "sidebar__user",
         children: [
-          c.jsxs("div", {
+          jsxRuntime.jsxs("div", {
             className: "sidebar__user-row",
             children: [
-              c.jsx("div", {
+              jsxRuntime.jsx("div", {
                 className: "sidebar__user-name",
                 children: u.name,
               }),
-              c.jsx("div", { className: "sidebar__user-meta", children: u.id }),
+              jsxRuntime.jsx("div", { className: "sidebar__user-meta", children: u.id }),
             ],
           }),
-          c.jsxs("div", {
+          jsxRuntime.jsxs("div", {
             className: "sidebar__user-role",
             children: [u.role, " · ", u.department],
           }),
-          c.jsx("button", {
+          jsxRuntime.jsx("button", {
             type: "button",
             className: "secondary-button sidebar__logout",
             onClick: () => n(!0),
@@ -4441,7 +4465,7 @@ function Sidebar({ currentPath: e, onNavigate: t, onLogout: l }) {
         ],
       }),
       a
-        ? c.jsx(nl, {
+        ? jsxRuntime.jsx(nl, {
             title: "로그아웃",
             ariaLabel: "로그아웃 확인",
             onClose: () => n(!1),
@@ -4450,15 +4474,15 @@ function Sidebar({ currentPath: e, onNavigate: t, onLogout: l }) {
             backdropClassName: "logout-backdrop",
             headerClassName: "modal__header--tight",
             footerClassName: "modal__footer--split",
-            footer: c.jsxs(c.Fragment, {
+            footer: jsxRuntime.jsxs(jsxRuntime.Fragment, {
               children: [
-                c.jsx("button", {
+                jsxRuntime.jsx("button", {
                   type: "button",
                   className: "secondary-button",
                   onClick: () => n(!1),
                   children: "취소",
                 }),
-                c.jsx("button", {
+                jsxRuntime.jsx("button", {
                   type: "button",
                   className: "danger-button",
                   onClick: s,
@@ -4466,7 +4490,7 @@ function Sidebar({ currentPath: e, onNavigate: t, onLogout: l }) {
                 }),
               ],
             }),
-            children: c.jsx("p", {
+            children: jsxRuntime.jsx("p", {
               className: "logout-confirm__text",
               children: "로그아웃 하시겠습니까?",
             }),
@@ -4476,31 +4500,31 @@ function Sidebar({ currentPath: e, onNavigate: t, onLogout: l }) {
   });
 }
 function TopHeader({ title: e, description: t, rightSlot: l }) {
-  return c.jsxs("header", {
+  return jsxRuntime.jsxs("header", {
     className: "top-header",
     children: [
-      c.jsxs("div", {
+      jsxRuntime.jsxs("div", {
         className: "top-header__copy",
         children: [
-          c.jsx("h1", { className: "top-header__title", children: e }),
+          jsxRuntime.jsx("h1", { className: "top-header__title", children: e }),
           t
-            ? c.jsx("p", { className: "top-header__description", children: t })
+            ? jsxRuntime.jsx("p", { className: "top-header__description", children: t })
             : null,
         ],
       }),
-      l ? c.jsx("div", { className: "top-header__slot", children: l }) : null,
+      l ? jsxRuntime.jsx("div", { className: "top-header__slot", children: l }) : null,
     ],
   });
 }
 function DashboardShell({ currentPath: e, onNavigate: t, onLogout: l }) {
-  const a = Mh(),
-    n = ROUTE_META[e] ?? ROUTE_META["/dashboard"],
-    u = j.useMemo(
-      () => NAV_ITEMS.filter((r) => r.roles.includes(a.role)).map((r) => r.href),
+  const a = loadCurrentAccountProfile(),
+    n = routeMetadata[e] ?? routeMetadata["/dashboard"],
+    u = hookRuntime.useMemo(
+      () => navigationItems.filter((r) => r.roles.includes(a.role)).map((r) => r.href),
       [a.role],
     ),
-    [i, s] = j.useState(null);
-  (j.useEffect(() => {
+    [i, s] = hookRuntime.useState(null);
+  (hookRuntime.useEffect(() => {
     let r = !0;
     return (
       Promise.all([loadFeedbackItems(), loadAccountData(), my()]).then(([b, y, h]) => {
@@ -4508,7 +4532,7 @@ function DashboardShell({ currentPath: e, onNavigate: t, onLogout: l }) {
           s({
             feedbacks: b,
             accounts: y.accounts,
-            knowledgeDocuments: h.documents,
+            knowledgeDocumentList: h.documents,
           });
       }),
       () => {
@@ -4516,51 +4540,51 @@ function DashboardShell({ currentPath: e, onNavigate: t, onLogout: l }) {
       }
     );
   }, []),
-    j.useEffect(() => {
+    hookRuntime.useEffect(() => {
       u.includes(e) || (u[0] && t(u[0]));
     }, [e, t, u]));
   const f = () => {
     switch (e) {
       case "/dashboard":
-        return c.jsx(DashboardView, { data: DASHBOARD_SECTIONS.WEEK });
+        return jsxRuntime.jsx(DashboardView, { data: DASHBOARD_SECTIONS.WEEK });
       case "/content":
-        return c.jsx(ContentManagementView, { documents: contentDocuments });
+        return jsxRuntime.jsx(ContentManagementView, { documents: contentDocumentList });
       case "/cache-qa":
-        return c.jsx(CacheAnswerManagementView, { items: cacheQaRecords });
+        return jsxRuntime.jsx(CacheAnswerManagementView, { items: cacheQaRecords });
       case "/knowledge":
         return i
-          ? c.jsx(KnowledgeQueryView, { documents: i.knowledgeDocuments })
-          : c.jsx(LoadingPlaceholder, { label: "지식 기반 조회" });
+          ? jsxRuntime.jsx(KnowledgeQueryView, { documents: i.knowledgeDocumentList })
+          : jsxRuntime.jsx(LoadingPlaceholder, { label: "지식 기반 조회" });
       case "/feedback":
         return i
-          ? c.jsx(FeedbackManagementView, { feedbacks: i.feedbacks })
-          : c.jsx(LoadingPlaceholder, { label: "피드백 관리" });
+          ? jsxRuntime.jsx(FeedbackManagementView, { feedbacks: i.feedbacks })
+          : jsxRuntime.jsx(LoadingPlaceholder, { label: "피드백 관리" });
       case "/accounts":
         return i
-          ? c.jsx(AccountPermissionManagementView, { accounts: i.accounts })
-          : c.jsx(LoadingPlaceholder, { label: "계정/권한 관리" });
+          ? jsxRuntime.jsx(AccountPermissionManagementView, { accounts: i.accounts })
+          : jsxRuntime.jsx(LoadingPlaceholder, { label: "계정/권한 관리" });
       default:
-        return c.jsx(DashboardView, { data: DASHBOARD_SECTIONS.WEEK });
+        return jsxRuntime.jsx(DashboardView, { data: DASHBOARD_SECTIONS.WEEK });
     }
   };
-  return c.jsxs("div", {
+  return jsxRuntime.jsxs("div", {
     className: "admin-shell",
     children: [
-      c.jsx(Sidebar, { currentPath: e, onNavigate: t, onLogout: l }),
-      c.jsxs("div", {
+      jsxRuntime.jsx(Sidebar, { currentPath: e, onNavigate: t, onLogout: l }),
+      jsxRuntime.jsxs("div", {
         className: "admin-shell__main",
         children: [
-          c.jsx(TopHeader, { title: n.title, description: n.description }),
-          c.jsx("main", { className: "admin-shell__content", children: f() }),
+          jsxRuntime.jsx(TopHeader, { title: n.title, description: n.description }),
+          jsxRuntime.jsx("main", { className: "admin-shell__content", children: f() }),
         ],
       }),
     ],
   });
 }
 function LoadingPlaceholder({ label: e }) {
-  return c.jsx("section", {
+  return jsxRuntime.jsx("section", {
     className: "panel panel--main",
-    children: c.jsxs("div", {
+    children: jsxRuntime.jsxs("div", {
       className: "content-empty content-empty--detail",
       children: [e, " 데이터를 불러오는 중입니다."],
     }),
@@ -4568,10 +4592,10 @@ function LoadingPlaceholder({ label: e }) {
 }
 const AUTHENTICATED_STATUS = "authenticated";
 function App() {
-  const [e, t] = j.useState(!1),
-    [l, a] = j.useState("/dashboard");
-  j.useEffect(() => {
-    typeof window > "u" || t(window.sessionStorage.getItem(su) === AUTHENTICATED_STATUS);
+  const [e, t] = hookRuntime.useState(!1),
+    [l, a] = hookRuntime.useState("/dashboard");
+  hookRuntime.useEffect(() => {
+    typeof window > "u" || t(window.sessionStorage.getItem(AUTH_STAGE_KEY) === AUTHENTICATED_STATUS);
   }, []);
   const n = () => {
       (t(!0), a("/dashboard"));
@@ -4580,11 +4604,11 @@ function App() {
       (t(!1), a("/dashboard"));
     };
   return e
-    ? c.jsx(DashboardShell, { currentPath: l, onNavigate: a, onLogout: u })
-    : c.jsx(AuthScreen, { onAuthenticated: n });
+    ? jsxRuntime.jsx(DashboardShell, { currentPath: l, onNavigate: a, onLogout: u })
+    : jsxRuntime.jsx(AuthScreen, { onAuthenticated: n });
 }
 
-const miniRuntime = {
+const miniRendererState = {
   root: null,
   element: null,
   instances: new Map(),
@@ -4595,9 +4619,9 @@ const miniRuntime = {
   portalRoot: null,
 };
 
-function getInstance(path, type) {
+function getMiniInstance(path, type) {
   const key = `${path}`;
-  let instance = miniRuntime.instances.get(key);
+  let instance = miniRendererState.instances.get(key);
   if (!instance) {
     instance = {
       type,
@@ -4605,25 +4629,25 @@ function getInstance(path, type) {
       effects: [],
       childCount: 0,
     };
-    miniRuntime.instances.set(key, instance);
+    miniRendererState.instances.set(key, instance);
   }
   instance.type = type;
   instance.childCount = 0;
   return instance;
 }
 
-function scheduleRender() {
-  if (miniRuntime.scheduled) return;
-  miniRuntime.scheduled = true;
+function scheduleMiniRender() {
+  if (miniRendererState.scheduled) return;
+  miniRendererState.scheduled = true;
   queueMicrotask(() => {
-    miniRuntime.scheduled = false;
+    miniRendererState.scheduled = false;
     renderMiniApp();
   });
 }
 
 function useMiniState(initialValue) {
-  const instance = miniRuntime.currentInstance;
-  const index = miniRuntime.currentHookIndex++;
+  const instance = miniRendererState.currentInstance;
+  const index = miniRendererState.currentHookIndex++;
   if (instance.hooks[index] === void 0) {
     instance.hooks[index] = typeof initialValue === "function" ? initialValue() : initialValue;
   }
@@ -4631,13 +4655,13 @@ function useMiniState(initialValue) {
     const resolved = typeof nextValue === "function" ? nextValue(instance.hooks[index]) : nextValue;
     if (!Object.is(resolved, instance.hooks[index])) {
       instance.hooks[index] = resolved;
-      scheduleRender();
+      scheduleMiniRender();
     }
   };
   return [instance.hooks[index], setState];
 }
 
-function depsChanged(prevDeps, nextDeps) {
+function haveDependenciesChanged(prevDeps, nextDeps) {
   if (!prevDeps || !nextDeps) return true;
   if (prevDeps.length !== nextDeps.length) return true;
   for (let index = 0; index < prevDeps.length; index += 1) {
@@ -4647,10 +4671,10 @@ function depsChanged(prevDeps, nextDeps) {
 }
 
 function useMiniMemo(factory, deps) {
-  const instance = miniRuntime.currentInstance;
-  const index = miniRuntime.currentHookIndex++;
+  const instance = miniRendererState.currentInstance;
+  const index = miniRendererState.currentHookIndex++;
   const record = instance.hooks[index];
-  if (!record || depsChanged(record.deps, deps)) {
+  if (!record || haveDependenciesChanged(record.deps, deps)) {
     const value = factory();
     instance.hooks[index] = { value, deps };
     return value;
@@ -4659,8 +4683,8 @@ function useMiniMemo(factory, deps) {
 }
 
 function useMiniRef(initialValue) {
-  const instance = miniRuntime.currentInstance;
-  const index = miniRuntime.currentHookIndex++;
+  const instance = miniRendererState.currentInstance;
+  const index = miniRendererState.currentHookIndex++;
   if (!instance.hooks[index]) {
     instance.hooks[index] = { current: initialValue };
   }
@@ -4672,12 +4696,12 @@ function useMiniCallback(callback, deps) {
 }
 
 function useMiniEffect(effect, deps) {
-  const instance = miniRuntime.currentInstance;
-  const index = miniRuntime.currentHookIndex++;
+  const instance = miniRendererState.currentInstance;
+  const index = miniRendererState.currentHookIndex++;
   const previous = instance.hooks[index];
-  if (!previous || depsChanged(previous.deps, deps)) {
+  if (!previous || haveDependenciesChanged(previous.deps, deps)) {
     instance.hooks[index] = { effect, deps, cleanup: previous?.cleanup ?? null, pending: true };
-    miniRuntime.effects.push({ instance, index });
+    miniRendererState.effects.push({ instance, index });
   }
 }
 
@@ -4753,12 +4777,12 @@ function renderMiniElement(element, path) {
     return fragment;
   }
   if (element.$$typeof === Symbol.for("react.portal")) {
-    if (!miniRuntime.portalRoot) {
-      miniRuntime.portalRoot = document.createElement("div");
-      miniRuntime.portalRoot.setAttribute("data-mini-portal", "true");
-      document.body.appendChild(miniRuntime.portalRoot);
+    if (!miniRendererState.portalRoot) {
+      miniRendererState.portalRoot = document.createElement("div");
+      miniRendererState.portalRoot.setAttribute("data-mini-portal", "true");
+      document.body.appendChild(miniRendererState.portalRoot);
     }
-    const portalContainer = miniRuntime.portalRoot;
+    const portalContainer = miniRendererState.portalRoot;
     portalContainer.innerHTML = "";
     const portalContent = renderMiniElement(element.children ?? element.props?.children, `${path}.portal`);
     if (portalContent) portalContainer.appendChild(portalContent);
@@ -4773,16 +4797,16 @@ function renderMiniElement(element, path) {
     return fragment;
   }
   if (typeof element.type === "function") {
-    const instance = getInstance(path, element.type);
-    const previousInstance = miniRuntime.currentInstance;
-    const previousHookIndex = miniRuntime.currentHookIndex;
-    miniRuntime.currentInstance = instance;
-    miniRuntime.currentHookIndex = 0;
+    const instance = getMiniInstance(path, element.type);
+    const previousInstance = miniRendererState.currentInstance;
+    const previousHookIndex = miniRendererState.currentHookIndex;
+    miniRendererState.currentInstance = instance;
+    miniRendererState.currentHookIndex = 0;
     instance.childCount += 1;
     const rendered = element.type({ ...(element.props ?? {}) });
     const node = renderMiniElement(rendered, `${path}:render`);
-    miniRuntime.currentInstance = previousInstance;
-    miniRuntime.currentHookIndex = previousHookIndex;
+    miniRendererState.currentInstance = previousInstance;
+    miniRendererState.currentHookIndex = previousHookIndex;
     return node;
   }
 
@@ -4793,16 +4817,16 @@ function renderMiniElement(element, path) {
 }
 
 function renderMiniApp() {
-  if (!miniRuntime.root) return;
-  miniRuntime.effects = [];
-  miniRuntime.root.innerHTML = "";
-  if (miniRuntime.portalRoot) {
-    miniRuntime.portalRoot.innerHTML = "";
+  if (!miniRendererState.root) return;
+  miniRendererState.effects = [];
+  miniRendererState.root.innerHTML = "";
+  if (miniRendererState.portalRoot) {
+    miniRendererState.portalRoot.innerHTML = "";
   }
-  const node = renderMiniElement(miniRuntime.element, "root");
-  if (node) miniRuntime.root.appendChild(node);
-  const effects = miniRuntime.effects.slice();
-  miniRuntime.effects = [];
+  const node = renderMiniElement(miniRendererState.element, "root");
+  if (node) miniRendererState.root.appendChild(node);
+  const effects = miniRendererState.effects.slice();
+  miniRendererState.effects = [];
   for (const { instance, index } of effects) {
     const record = instance.hooks[index];
     if (!record || !record.pending) continue;
@@ -4824,23 +4848,34 @@ function renderMiniApp() {
 }
 
 function mountMiniApp(container) {
-  miniRuntime.root = container;
+  miniRendererState.root = container;
   return {
     render(element) {
-      miniRuntime.element = element;
+      miniRendererState.element = element;
       renderMiniApp();
     },
   };
 }
 
-j.useState = useMiniState;
-j.useMemo = useMiniMemo;
-j.useRef = useMiniRef;
-j.useCallback = useMiniCallback;
-j.useEffect = useMiniEffect;
-j.useLayoutEffect = useMiniEffect;
+hookRuntime.useState = useMiniState;
+hookRuntime.useMemo = useMiniMemo;
+hookRuntime.useRef = useMiniRef;
+hookRuntime.useCallback = useMiniCallback;
+hookRuntime.useEffect = useMiniEffect;
+hookRuntime.useLayoutEffect = useMiniEffect;
 
-zv.createRoot = mountMiniApp;
+rendererRuntime.createRoot = mountMiniApp;
 
-const miniRoot = zv.createRoot(document.getElementById("root"));
-miniRoot.render(c.jsx(App, {}));
+function initializeApp() {
+  const root = document.getElementById("root");
+  if (root) {
+    const appRootController = rendererRuntime.createRoot(root);
+    appRootController.render(jsxRuntime.jsx(App, {}));
+  }
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initializeApp);
+} else {
+  initializeApp();
+}
