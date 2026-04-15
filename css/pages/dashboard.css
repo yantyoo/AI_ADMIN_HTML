@@ -1,0 +1,21 @@
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(780px, 1.45fr) minmax(360px, 420px);
+  gap: 20px;
+  align-items: stretch;
+  min-height: 0;
+  width: min(100%, 1600px);
+  margin: 0 auto;
+}
+.dashboard-side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+  min-height: 0;
+  width: min(100%, 420px);
+}
+.dashboard-grid > .panel,
+.dashboard-grid > .dashboard-side {
+  align-self: stretch;
+}

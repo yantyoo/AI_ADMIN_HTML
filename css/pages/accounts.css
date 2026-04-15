@@ -1,0 +1,156 @@
+﻿.accounts-layout {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 16px;
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+}
+.accounts-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.accounts-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(330px, 1fr);
+  gap: 16px;
+  align-items: stretch;
+  height: 100%;
+  min-height: 0;
+}
+.accounts-detail-identity {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  width: 100%;
+  flex: 1 1 100%;
+  justify-self: stretch;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+}
+.accounts-detail-identity__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.accounts-detail-identity-header .section-header__copy {
+  flex: 1 1 auto;
+  width: 100%;
+}
+.accounts-detail-identity-header .section-header__title {
+  width: 100%;
+}
+.accounts-detail-identity__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.accounts-detail-identity__id {
+  width: fit-content;
+  max-width: 100%;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.accounts-detail-identity__role {
+  width: fit-content;
+  max-width: 100%;
+  padding: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.accounts-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.accounts-self-notice {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.accounts-history {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.accounts-history h4 {
+  margin: 0 0 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.accounts-history-empty {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin: 0;
+}
+.accounts-history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 5px;
+}
+.accounts-history-list li {
+  padding: 9px 11px;
+  border-radius: var(--radius-xs);
+  background: var(--surface-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.accounts-list-scroll,
+.accounts-detail-scroll {
+  display: grid;
+  gap: 10px;
+  min-height: 0;
+}
+.accounts-list-scroll {
+  flex: none;
+  width: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+.accounts-detail-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 6px;
+  align-content: start;
+}
+.accounts-history-list li strong {
+  margin-right: 8px;
+  font-weight: 700;
+}
+.accounts-login-success {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1a7a44;
+}
+.accounts-login-fail {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-rose);
+}

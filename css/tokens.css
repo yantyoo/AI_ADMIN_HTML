@@ -1,0 +1,23 @@
+:root {
+  --bg: #edf1f8;
+  --surface: #ffffff;
+  --surface-muted: #f4f7fb;
+  --border: #dce4f0;
+  --text: #1c2b3d;
+  --text-muted: #6e7f97;
+  --nav-bg: #252e42;
+  --nav-surface: #3a4f75;
+  --accent-blue: #4a82f5;
+  --accent-green: #27b870;
+  --accent-rose: #f24472;
+  --shadow: 0 4px 20px rgba(22, 40, 68, 0.08);
+  --shadow-lg: 0 12px 48px rgba(22, 40, 68, 0.14);
+  --radius-lg: 22px;
+  --radius-md: 16px;
+  --radius-sm: 12px;
+  --radius-xs: 8px;
+  --font-sans:
+    "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont,
+    sans-serif;
+  --t: 0.14s ease;
+}

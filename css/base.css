@@ -1,0 +1,38 @@
+@font-face {
+  font-family: "Pretendard Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 45 920;
+  src: url("./fonts/PretendardVariable.subset.91.woff2")
+    format("woff2-variations");
+}
+*,
+*:before,
+*:after {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  height: 100%;
+  background: linear-gradient(150deg, #f5f8fd, #edf1f8);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "ss01";
+}
+body {
+  min-width: 320px;
+  overflow: hidden;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+button {
+  font: inherit;
+  cursor: pointer;
+}
