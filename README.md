@@ -1,19 +1,20 @@
 # XpERP AI Admin
 
-Vite + React 기반 관리자 UI입니다.
+정적 HTML + CSS + JS 기반 관리자 UI입니다.
 
-## Run
+## 실행
 
-```bash
-npm install
-npm run dev
-```
+1. `index.html`을 더블클릭합니다.
+2. 브라우저에서 바로 사용합니다.
 
-## Structure
+## 구조
 
-- `src/`: app entry and screen composition
-- `api/`: mock data access
-- `components/`: shared layout and UI primitives
-- `features/`: feature panels and shared layout config
-- `guidelines/`: design and implementation guidance
+- `index.html`: 단일 실행 파일
+- `docs/`: 기능 문서
+- `guidelines/`: 작업 가이드
 
+## 주의
+
+- `package.json` 없음
+- `node_modules` 없음
+- 기능과 디자인은 기존 배포본 기준으로 유지됩니다.
