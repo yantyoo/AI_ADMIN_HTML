@@ -258,140 +258,140 @@ function AuthScreen({ onAuthenticated }) {
     [otpFailureCount, setOtpFailureCount] = hookRuntime.useState(0),
     [isOtpLocked, setIsOtpLocked] = hookRuntime.useState(!1),
     [noticeDialog, setNoticeDialog] = hookRuntime.useState(null),
-    e = onAuthenticated,
-    t = credentialForm,
-    l = setCredentialForm,
-    a = helperMessage,
-    n = setHelperMessage,
-    u = errorMessage,
-    i = setErrorMessage,
-    s = isSubmitting,
-    f = setIsSubmitting,
-    r = rememberUserId,
-    b = setRememberUserId,
-    y = isOtpPanelOpen,
-    h = setIsOtpPanelOpen,
-    m = otpFailureCount,
-    A = setOtpFailureCount,
-    N = isOtpLocked,
-    R = setIsOtpLocked,
-    o = noticeDialog,
-    d = setNoticeDialog,
     otpCaption = hookRuntime.useMemo(
       () =>
-        N
+        isOtpLocked
           ? "OTP 오류로 잠금된 아이디입니다. 관리자에게 문의하세요."
-          : m > 0
-            ? `OTP 인증에 실패했습니다. (${m}/${MAX_OTP_ATTEMPTS})`
+          : otpFailureCount > 0
+            ? `OTP 인증에 실패했습니다. (${otpFailureCount}/${MAX_OTP_ATTEMPTS})`
             : "OTP를 입력하면 로그인 절차를 완료합니다.",
-      [m, N],
+      [otpFailureCount, isOtpLocked],
     );
-  const v = otpCaption;
   hookRuntime.useEffect(() => {
     if (typeof window > "u") return;
-    const Q = window.sessionStorage.getItem(AUTH_STAGE_KEY),
-      se =
+    const authStage = window.sessionStorage.getItem(AUTH_STAGE_KEY),
+      storedUserId =
         window.sessionStorage.getItem(AUTH_USER_ID_KEY) ??
         window.localStorage.getItem(AUTH_USER_ID_KEY) ??
         "",
-      xe = window.sessionStorage.getItem(OTP_LOCKED_KEY) === "true",
-      x = toSafeNumber(window.sessionStorage.getItem(OTP_FAILURE_COUNT_KEY));
-    if (Q === "authenticated") {
-      e();
+      otpLocked = window.sessionStorage.getItem(OTP_LOCKED_KEY) === "true",
+      failures = toSafeNumber(window.sessionStorage.getItem(OTP_FAILURE_COUNT_KEY));
+    if (authStage === "authenticated") {
+      onAuthenticated();
       return;
     }
-    const z = sanitizeUserId(se);
-    (l((U) => ({ ...U, userId: z })),
-      R(xe),
-      A(x),
-      h(Q === "otp_pending" && !!z));
-  }, [e]);
-  const g = (Q) => (se) => {
-      const xe = Q === "userId" ? sanitizeUserId(se) : Q === "password" ? sanitizePassword(se) : se;
-      (l((x) => ({ ...x, [Q]: xe })), i(""));
+    const sanitizedUserId = sanitizeUserId(storedUserId);
+    (setCredentialForm((prev) => ({ ...prev, userId: sanitizedUserId })),
+      setIsOtpLocked(otpLocked),
+      setOtpFailureCount(failures),
+      setIsOtpPanelOpen(authStage === "otp_pending" && !!sanitizedUserId));
+  }, []);
+  const isComposingRef = hookRuntime.useRef({ userId: !1, password: !1, otp: !1 }),
+    updateField = (field) => (value) => {
+      if (!isComposingRef.current[field]) {
+        const sanitized = field === "userId" ? sanitizeUserId(value) : field === "password" ? sanitizePassword(value) : value;
+        (setCredentialForm((prev) => ({ ...prev, [field]: sanitized })), setErrorMessage(""));
+      }
     },
-    E = (Q) => {
-      d(Q);
+    handleCompositionStart = (field) => (event) => {
+      isComposingRef.current[field] = !0;
     },
-    C = () => {
-      d(null);
+    handleCompositionEnd = (field) => (event) => {
+      isComposingRef.current[field] = !1;
+      if (field === "userId") {
+        const sanitized = sanitizeUserId(event.target.value);
+        (setCredentialForm((prev) => ({ ...prev, userId: sanitized })), setErrorMessage(""));
+      }
+      if (field === "password") {
+        const sanitized = sanitizePassword(event.target.value);
+        (setCredentialForm((prev) => ({ ...prev, password: sanitized })), setErrorMessage(""));
+      }
+      if (field === "otp") {
+        setCredentialForm((prev) => ({ ...prev, otp: event.target.value }));
+      }
     },
-    T = () => {
-      (h(!0), i(""), n(""), A(0), R(!1));
+    showNoticeDialog = (dialog) => {
+      setNoticeDialog(dialog);
     },
-    D = () => {
-      (h(!1), l((Q) => ({ ...Q, otp: "" })), n(""), i(""));
+    hideNoticeDialog = () => {
+      setNoticeDialog(null);
     },
-    S = async (Q) => {
-      if ((Q.preventDefault(), s)) return;
-      if (!t.userId.trim() || !t.password.trim()) {
-        i("아이디와 비밀번호를 입력해 주세요.");
+    openOtpPanel = () => {
+      (setIsOtpPanelOpen(!0), setErrorMessage(""), setHelperMessage(""), setOtpFailureCount(0), setIsOtpLocked(!1));
+    },
+    closeOtpPanel = () => {
+      (setIsOtpPanelOpen(!1), setCredentialForm((prev) => ({ ...prev, otp: "" })), setHelperMessage(""), setErrorMessage(""));
+    },
+    handleCredentialSubmit = async (event) => {
+      if ((event.preventDefault(), isSubmitting)) return;
+      if (!credentialForm.userId.trim() || !credentialForm.password.trim()) {
+        setErrorMessage("아이디와 비밀번호를 입력해 주세요.");
         return;
       }
-      const se = sanitizeUserId(t.userId.trim()),
-        xe = sanitizePassword(t.password.trim()),
-        x = loginAccountDirectory[se];
-      if (!x || x.password !== xe) {
-        E(invalidLoginDialog);
+      const userId = sanitizeUserId(credentialForm.userId.trim()),
+        password = sanitizePassword(credentialForm.password.trim()),
+        account = loginAccountDirectory[userId];
+      if (!account || account.password !== password) {
+        showNoticeDialog(invalidLoginDialog);
         return;
       }
-      if (!x.allowed) {
-        E(accessDeniedDialog);
+      if (!account.allowed) {
+        showNoticeDialog(accessDeniedDialog);
         return;
       }
-      (f(!0),
-        n("OTP 입력 창을 여는 중입니다."),
+      (setIsSubmitting(!0),
+        setHelperMessage("OTP 입력 창을 여는 중입니다."),
         window.sessionStorage.setItem(AUTH_STAGE_KEY, "otp_pending"),
-        window.sessionStorage.setItem(AUTH_USER_ID_KEY, se),
+        window.sessionStorage.setItem(AUTH_USER_ID_KEY, userId),
         window.sessionStorage.setItem(OTP_FAILURE_COUNT_KEY, "0"),
         window.sessionStorage.removeItem(OTP_LOCKED_KEY),
-        r
-          ? window.localStorage.setItem(AUTH_USER_ID_KEY, se)
+        rememberUserId
+          ? window.localStorage.setItem(AUTH_USER_ID_KEY, userId)
           : window.localStorage.removeItem(AUTH_USER_ID_KEY),
         await delay(250),
-        f(!1),
-        T());
+        setIsSubmitting(!1),
+        openOtpPanel());
     },
-    _ = async (Q) => {
-      if ((Q.preventDefault(), s || !y)) return;
-      if (N) {
-        E(otpLockedDialog);
+    handleOtpSubmit = async (event) => {
+      if ((event.preventDefault(), isSubmitting || !isOtpPanelOpen)) return;
+      if (isOtpLocked) {
+        showNoticeDialog(otpLockedDialog);
         return;
       }
-      if (t.otp.trim().length !== 6) {
-        i("6자리 OTP를 입력해 주세요.");
+      if (credentialForm.otp.trim().length !== 6) {
+        setErrorMessage("6자리 OTP를 입력해 주세요.");
         return;
       }
-      if ((f(!0), t.otp.trim() !== DEFAULT_OTP_CODE)) {
-        const x = m + 1,
-          z = x >= MAX_OTP_ATTEMPTS;
-        (A(x),
-          window.sessionStorage.setItem(OTP_FAILURE_COUNT_KEY, String(x)),
-          z
-            ? (R(!0), window.sessionStorage.setItem(OTP_LOCKED_KEY, "true"), E(otpLockedDialog))
-            : i(`OTP 인증에 실패했습니다. (${x}/${MAX_OTP_ATTEMPTS})`),
-          f(!1));
+      if ((setIsSubmitting(!0), credentialForm.otp.trim() !== DEFAULT_OTP_CODE)) {
+        const newFailCount = otpFailureCount + 1,
+          shouldLock = newFailCount >= MAX_OTP_ATTEMPTS;
+        (setOtpFailureCount(newFailCount),
+          window.sessionStorage.setItem(OTP_FAILURE_COUNT_KEY, String(newFailCount)),
+          shouldLock
+            ? (setIsOtpLocked(!0), window.sessionStorage.setItem(OTP_LOCKED_KEY, "true"), showNoticeDialog(otpLockedDialog))
+            : setErrorMessage(`OTP 인증에 실패했습니다. (${newFailCount}/${MAX_OTP_ATTEMPTS})`),
+          setIsSubmitting(!1));
         return;
       }
-      const se = loginAccountDirectory[t.userId.trim()],
-        xe = (se == null ? void 0 : se.profile) ?? {
-          userId: t.userId.trim(),
-          id: t.userId.trim(),
-          name: t.userId.trim(),
+      const accountEntry = loginAccountDirectory[credentialForm.userId.trim()],
+        profile = (accountEntry == null ? void 0 : accountEntry.profile) ?? {
+          userId: credentialForm.userId.trim(),
+          id: credentialForm.userId.trim(),
+          name: credentialForm.userId.trim(),
           role: "MASTER",
           department: "운영 관리자",
         };
-      (persistAccountProfile(xe, r),
+      (persistAccountProfile(profile, rememberUserId),
         window.sessionStorage.setItem(AUTH_STAGE_KEY, "authenticated"),
-        window.sessionStorage.setItem(AUTH_PROFILE_KEY, JSON.stringify(xe)),
+        window.sessionStorage.setItem(AUTH_PROFILE_KEY, JSON.stringify(profile)),
         window.sessionStorage.removeItem(OTP_FAILURE_COUNT_KEY),
         window.sessionStorage.removeItem(OTP_LOCKED_KEY),
-        n("대시보드로 이동합니다."),
+        setHelperMessage("대시보드로 이동합니다."),
         await delay(250),
-        e());
+        onAuthenticated());
     },
-    te = s || !t.userId.trim() || !t.password.trim(),
-    De = s || N || t.otp.trim().length !== 6;
+    isCredentialFormDisabled = isSubmitting || !credentialForm.userId.trim() || !credentialForm.password.trim(),
+    isOtpSubmitDisabled = isSubmitting || isOtpLocked || credentialForm.otp.trim().length !== 6;
   return jsxRuntime.jsxs("main", {
     className: "auth-shell auth-shell--standalone",
     children: [
@@ -425,7 +425,7 @@ function AuthScreen({ onAuthenticated }) {
           }),
           jsxRuntime.jsxs("form", {
             className: "auth-form",
-            onSubmit: S,
+            onSubmit: handleCredentialSubmit,
             children: [
               jsxRuntime.jsxs("div", {
                 className: "auth-form__header",
@@ -453,8 +453,10 @@ function AuthScreen({ onAuthenticated }) {
                       jsxRuntime.jsx("input", {
                         className: "field__input auth-input",
                         maxLength: LOGIN_USER_ID_MAX_LENGTH,
-                        value: t.userId,
-                        onChange: (Q) => g("userId")(Q.target.value),
+                        value: credentialForm.userId,
+                        onChange: (ev) => updateField("userId")(ev.target.value),
+                        onCompositionStart: handleCompositionStart("userId"),
+                        onCompositionEnd: handleCompositionEnd("userId"),
                         placeholder: "예: admin01",
                         autoComplete: "username",
                         inputMode: "text",
@@ -472,8 +474,10 @@ function AuthScreen({ onAuthenticated }) {
                         type: "password",
                         className: "field__input auth-input",
                         maxLength: LOGIN_PASSWORD_MAX_LENGTH,
-                        value: t.password,
-                        onChange: (Q) => g("password")(Q.target.value),
+                        value: credentialForm.password,
+                        onChange: (ev) => updateField("password")(ev.target.value),
+                        onCompositionStart: handleCompositionStart("password"),
+                        onCompositionEnd: handleCompositionEnd("password"),
                         placeholder: "비밀번호 입력",
                         autoComplete: "current-password",
                         inputMode: "text",
@@ -485,8 +489,8 @@ function AuthScreen({ onAuthenticated }) {
                     children: [
                       jsxRuntime.jsx("input", {
                         type: "checkbox",
-                        checked: r,
-                        onChange: (Q) => b(Q.target.checked),
+                        checked: rememberUserId,
+                        onChange: (ev) => setRememberUserId(ev.target.checked),
                       }),
                       jsxRuntime.jsx("span", { children: "아이디 저장" }),
                     ],
@@ -498,19 +502,19 @@ function AuthScreen({ onAuthenticated }) {
                 children: jsxRuntime.jsx("button", {
                   type: "submit",
                   className: "primary-button auth-submit",
-                  disabled: te,
-                  children: s ? "처리 중..." : "로그인",
+                  disabled: isCredentialFormDisabled,
+                  children: isSubmitting ? "처리 중..." : "로그인",
                 }),
               }),
               jsxRuntime.jsxs("div", {
                 className: "auth-form__feedback",
                 "aria-live": "polite",
                 children: [
-                  u
-                    ? jsxRuntime.jsx("p", { className: "auth-error", children: u })
+                  errorMessage
+                    ? jsxRuntime.jsx("p", { className: "auth-error", children: errorMessage })
                     : null,
-                  !u && a
-                    ? jsxRuntime.jsx("p", { className: "auth-helper", children: a })
+                  !errorMessage && helperMessage
+                    ? jsxRuntime.jsx("p", { className: "auth-helper", children: helperMessage })
                     : null,
                 ],
               }),
@@ -518,16 +522,16 @@ function AuthScreen({ onAuthenticated }) {
           }),
         ],
       }),
-      y
-        ? jsxRuntime.jsx(Oh, {
+      isOtpPanelOpen
+        ? jsxRuntime.jsx(ModalBackdropPortal, {
             backdropClassName: "auth-otp-backdrop",
-            onBackdropClick: D,
+            onBackdropClick: closeOtpPanel,
             children: jsxRuntime.jsxs("section", {
               className: "modal auth-otp-modal",
               role: "dialog",
               "aria-modal": "true",
               "aria-label": "OTP 인증",
-              onClick: (Q) => Q.stopPropagation(),
+              onClick: (ev) => ev.stopPropagation(),
               children: [
                 jsxRuntime.jsx("div", {
                   className: "modal__header auth-otp-modal__header",
@@ -536,14 +540,14 @@ function AuthScreen({ onAuthenticated }) {
                       jsxRuntime.jsx("h3", { children: "OTP 인증" }),
                       jsxRuntime.jsx("p", {
                         className: "auth-otp-modal__caption",
-                        children: v,
+                        children: otpCaption,
                       }),
                     ],
                   }),
                 }),
                 jsxRuntime.jsxs("form", {
                   className: "auth-otp-modal__body",
-                  onSubmit: _,
+                  onSubmit: handleOtpSubmit,
                   children: [
                     jsxRuntime.jsxs("label", {
                       className: "field auth-otp-field",
@@ -554,13 +558,15 @@ function AuthScreen({ onAuthenticated }) {
                         }),
                         jsxRuntime.jsx("input", {
                           className: "field__input auth-input auth-input--otp",
-                          value: t.otp,
-                          onChange: (Q) => g("otp")(Q.target.value),
+                          value: credentialForm.otp,
+                          onChange: (ev) => updateField("otp")(ev.target.value),
+                          onCompositionStart: handleCompositionStart("otp"),
+                          onCompositionEnd: handleCompositionEnd("otp"),
                           placeholder: "6자리 OTP 입력",
                           inputMode: "numeric",
                           autoComplete: "one-time-code",
                           maxLength: 6,
-                          disabled: N,
+                          disabled: isOtpLocked,
                         }),
                       ],
                     }),
@@ -568,13 +574,13 @@ function AuthScreen({ onAuthenticated }) {
                       className: "auth-form__feedback",
                       "aria-live": "polite",
                       children: [
-                        u
-                          ? jsxRuntime.jsx("p", { className: "auth-error", children: u })
+                        errorMessage
+                          ? jsxRuntime.jsx("p", { className: "auth-error", children: errorMessage })
                           : null,
-                        !u && a
+                        !errorMessage && helperMessage
                           ? jsxRuntime.jsx("p", {
                               className: "auth-helper",
-                              children: a,
+                              children: helperMessage,
                             })
                           : null,
                       ],
@@ -585,14 +591,14 @@ function AuthScreen({ onAuthenticated }) {
                         jsxRuntime.jsx("button", {
                           type: "button",
                           className: "secondary-button auth-cancel",
-                          onClick: D,
+                          onClick: closeOtpPanel,
                           children: "취소",
                         }),
                         jsxRuntime.jsx("button", {
                           type: "submit",
                           className: "primary-button auth-submit",
-                          disabled: De,
-                          children: s ? "처리 중..." : "인증 완료",
+                          disabled: isOtpSubmitDisabled,
+                          children: isSubmitting ? "처리 중..." : "인증 완료",
                         }),
                       ],
                     }),
@@ -602,11 +608,11 @@ function AuthScreen({ onAuthenticated }) {
             }),
           })
         : null,
-      o
-        ? jsxRuntime.jsx(nl, {
-            title: o.title,
-            ariaLabel: o.title,
-            onClose: C,
+      noticeDialog
+        ? jsxRuntime.jsx(ModalDialog, {
+            title: noticeDialog.title,
+            ariaLabel: noticeDialog.title,
+            onClose: hideNoticeDialog,
             size: "sm",
             compact: !0,
             backdropClassName: "auth-notice-backdrop",
@@ -617,12 +623,12 @@ function AuthScreen({ onAuthenticated }) {
             footer: jsxRuntime.jsx("button", {
               type: "button",
               className: "primary-button",
-              onClick: C,
+              onClick: hideNoticeDialog,
               children: "확인",
             }),
             children: jsxRuntime.jsx("p", {
               className: "auth-notice-modal__message",
-              children: o.message,
+              children: noticeDialog.message,
             }),
           })
         : null,
@@ -956,43 +962,43 @@ const feedbackReactionMeta = {
     POSITIVE: { label: "만족해요", tooltipLabel: "만족해요" },
     NEGATIVE: { label: "아쉬워요", tooltipLabel: "아쉬워요" },
   },
-  vr = 100,
-  ct = 50,
-  Jn = 42,
-  La = 24,
-  $n = (e, t, l, a) => {
-    const n = ((a - 90) * Math.PI) / 180;
-    return { x: e + l * Math.cos(n), y: t + l * Math.sin(n) };
+  DONUT_SVG_SIZE = 100,
+  DONUT_CENTER = 50,
+  DONUT_OUTER_RADIUS = 42,
+  DONUT_INNER_RADIUS = 24,
+  getDonutPoint = (cx, cy, radius, angleDeg) => {
+    const rad = ((angleDeg - 90) * Math.PI) / 180;
+    return { x: cx + radius * Math.cos(rad), y: cy + radius * Math.sin(rad) };
   },
-  yr = (e, t) => {
-    const l = $n(ct, ct, Jn, t),
-      a = $n(ct, ct, Jn, e),
-      n = $n(ct, ct, La, e),
-      u = $n(ct, ct, La, t),
-      i = t - e <= 180 ? 0 : 1;
+  buildDonutSlicePath = (startAngle, endAngle) => {
+    const outerEnd = getDonutPoint(DONUT_CENTER, DONUT_CENTER, DONUT_OUTER_RADIUS, endAngle),
+      outerStart = getDonutPoint(DONUT_CENTER, DONUT_CENTER, DONUT_OUTER_RADIUS, startAngle),
+      innerStart = getDonutPoint(DONUT_CENTER, DONUT_CENTER, DONUT_INNER_RADIUS, startAngle),
+      innerEnd = getDonutPoint(DONUT_CENTER, DONUT_CENTER, DONUT_INNER_RADIUS, endAngle),
+      largeArcFlag = endAngle - startAngle <= 180 ? 0 : 1;
     return [
-      `M ${l.x.toFixed(3)} ${l.y.toFixed(3)}`,
-      `A ${Jn} ${Jn} 0 ${i} 0 ${a.x.toFixed(3)} ${a.y.toFixed(3)}`,
-      `L ${n.x.toFixed(3)} ${n.y.toFixed(3)}`,
-      `A ${La} ${La} 0 ${i} 1 ${u.x.toFixed(3)} ${u.y.toFixed(3)}`,
+      `M ${outerEnd.x.toFixed(3)} ${outerEnd.y.toFixed(3)}`,
+      `A ${DONUT_OUTER_RADIUS} ${DONUT_OUTER_RADIUS} 0 ${largeArcFlag} 0 ${outerStart.x.toFixed(3)} ${outerStart.y.toFixed(3)}`,
+      `L ${innerStart.x.toFixed(3)} ${innerStart.y.toFixed(3)}`,
+      `A ${DONUT_INNER_RADIUS} ${DONUT_INNER_RADIUS} 0 ${largeArcFlag} 1 ${innerEnd.x.toFixed(3)} ${innerEnd.y.toFixed(3)}`,
       "Z",
     ].join(" ");
   };
-function FeedbackRatio({ data: e }) {
-  const [t, l] = hookRuntime.useState(e.defaultReaction),
-    [a, n] = hookRuntime.useState(null),
-    u = (e.positive.count / e.totalCount) * 100,
-    i = (e.negative.count / e.totalCount) * 100,
-    s = hookRuntime.useMemo(
-      () => yr(0, (e.positive.count / e.totalCount) * 360),
-      [e.positive.count, e.totalCount],
+function FeedbackRatio({ data }) {
+  const [activeTab, setActiveTab] = hookRuntime.useState(data.defaultReaction),
+    [hoveredType, setHoveredType] = hookRuntime.useState(null),
+    positivePercent = (data.positive.count / data.totalCount) * 100,
+    negativePercent = (data.negative.count / data.totalCount) * 100,
+    positiveSlicePath = hookRuntime.useMemo(
+      () => buildDonutSlicePath(0, (data.positive.count / data.totalCount) * 360),
+      [data.positive.count, data.totalCount],
     ),
-    f = hookRuntime.useMemo(
-      () => yr((e.positive.count / e.totalCount) * 360, 360),
-      [e.positive.count, e.totalCount],
+    negativeSlicePath = hookRuntime.useMemo(
+      () => buildDonutSlicePath((data.positive.count / data.totalCount) * 360, 360),
+      [data.positive.count, data.totalCount],
     ),
-    r = a ? e[a === "POSITIVE" ? "positive" : "negative"] : null,
-    b = `${feedbackReactionMeta[t].label} TOP5 키워드`;
+    hoveredData = hoveredType ? data[hoveredType === "POSITIVE" ? "positive" : "negative"] : null,
+    keywordsTitle = `${feedbackReactionMeta[activeTab].label} TOP5 키워드`;
   return jsxRuntime.jsxs("section", {
     className: "panel panel--side feedback-ratio-card",
     children: [
@@ -1008,34 +1014,34 @@ function FeedbackRatio({ data: e }) {
             children: [
               jsxRuntime.jsxs("svg", {
                 className: "feedback-ratio__chart",
-                viewBox: `0 0 ${vr} ${vr}`,
+                viewBox: `0 0 ${DONUT_SVG_SIZE} ${DONUT_SVG_SIZE}`,
                 role: "img",
-                "aria-label": `피드백 비율 도넛 차트. 만족해요 ${formatPercent(u)}, 아쉬워요 ${formatPercent(i)}`,
+                "aria-label": `피드백 비율 도넛 차트. 만족해요 ${formatPercent(positivePercent)}, 아쉬워요 ${formatPercent(negativePercent)}`,
                 children: [
                   jsxRuntime.jsx("path", {
-                    d: s,
+                    d: positiveSlicePath,
                     className:
                       "feedback-ratio__slice feedback-ratio__slice--positive",
-                    onMouseEnter: () => n("POSITIVE"),
-                    onMouseLeave: () => n(null),
-                    onFocus: () => n("POSITIVE"),
-                    onBlur: () => n(null),
+                    onMouseEnter: () => setHoveredType("POSITIVE"),
+                    onMouseLeave: () => setHoveredType(null),
+                    onFocus: () => setHoveredType("POSITIVE"),
+                    onBlur: () => setHoveredType(null),
                     tabIndex: 0,
                   }),
                   jsxRuntime.jsx("path", {
-                    d: f,
+                    d: negativeSlicePath,
                     className:
                       "feedback-ratio__slice feedback-ratio__slice--negative",
-                    onMouseEnter: () => n("NEGATIVE"),
-                    onMouseLeave: () => n(null),
-                    onFocus: () => n("NEGATIVE"),
-                    onBlur: () => n(null),
+                    onMouseEnter: () => setHoveredType("NEGATIVE"),
+                    onMouseLeave: () => setHoveredType(null),
+                    onFocus: () => setHoveredType("NEGATIVE"),
+                    onBlur: () => setHoveredType(null),
                     tabIndex: 0,
                   }),
                   jsxRuntime.jsx("circle", {
-                    cx: ct,
-                    cacheQaRecords: ct,
-                    r: La,
+                    cx: DONUT_CENTER,
+                    cy: DONUT_CENTER,
+                    r: DONUT_INNER_RADIUS,
                     className: "feedback-ratio__hole",
                   }),
                   jsxRuntime.jsx("text", {
@@ -1050,24 +1056,24 @@ function FeedbackRatio({ data: e }) {
                     y: "60",
                     textAnchor: "middle",
                     className: "feedback-ratio__center-value",
-                    children: [e.totalCount.toLocaleString(), "건"],
+                    children: [data.totalCount.toLocaleString(), "건"],
                   }),
                 ],
               }),
-              r
+              hoveredData
                 ? jsxRuntime.jsxs("div", {
                     className: "feedback-ratio__tooltip",
                     "aria-live": "polite",
                     children: [
                       jsxRuntime.jsx("span", {
                         className: "feedback-ratio__tooltip-label",
-                        children: feedbackReactionMeta[a].tooltipLabel,
+                        children: feedbackReactionMeta[hoveredType].tooltipLabel,
                       }),
                       jsxRuntime.jsxs("strong", {
                         children: [
-                          r.count.toLocaleString(),
+                          hoveredData.count.toLocaleString(),
                           "건 · ",
-                          formatPercent(r.ratio),
+                          formatPercent(hoveredData.ratio),
                         ],
                       }),
                     ],
@@ -1079,25 +1085,25 @@ function FeedbackRatio({ data: e }) {
             className: "feedback-toggle",
             role: "tablist",
             "aria-label": "피드백 유형",
-            children: ["POSITIVE", "NEGATIVE"].map((y) => {
-              const h = y === t;
+            children: ["POSITIVE", "NEGATIVE"].map((reactionKey) => {
+              const isActive = reactionKey === activeTab;
               return jsxRuntime.jsx(
                 "button",
                 {
                   type: "button",
                   role: "tab",
-                  "aria-selected": h,
-                  className: `feedback-toggle__button${h ? " is-selected" : ""}`,
-                  onClick: () => l(y),
-                  children: feedbackReactionMeta[y].label,
+                  "aria-selected": isActive,
+                  className: `feedback-toggle__button${isActive ? " is-selected" : ""}`,
+                  onClick: () => setActiveTab(reactionKey),
+                  children: feedbackReactionMeta[reactionKey].label,
                 },
-                y,
+                reactionKey,
               );
             }),
           }),
           jsxRuntime.jsx(KeywordList, {
-            title: b,
-            items: t === "POSITIVE" ? e.positive.keywords : e.negative.keywords,
+            title: keywordsTitle,
+            items: activeTab === "POSITIVE" ? data.positive.keywords : data.negative.keywords,
             bare: !0,
           }),
         ],
@@ -1156,57 +1162,57 @@ const CHART_WIDTH = 760,
   CHART_HEIGHT = 340,
   CHART_PADDING = 32,
   TOOLTIP_WIDTH = 24,
-  $v = 5,
-  clamp = (e, t, l) => Math.min(Math.max(e, t), l),
-  buildRoundedRectPath = (e, t, l, a) => {
-    const n = Math.max(a, 0),
-      u = Math.min($v, l / 2, n / 2);
-    return n
-      ? u === 0
-        ? `M ${e} ${t} H ${e + l} V ${t + n} H ${e} Z`
+  BAR_CORNER_RADIUS = 5,
+  clamp = (val, min, max) => Math.min(Math.max(val, min), max),
+  buildRoundedRectPath = (x, y, width, height) => {
+    const clampedHeight = Math.max(height, 0),
+      cornerRadius = Math.min(BAR_CORNER_RADIUS, width / 2, clampedHeight / 2);
+    return clampedHeight
+      ? cornerRadius === 0
+        ? `M ${x} ${y} H ${x + width} V ${y + clampedHeight} H ${x} Z`
         : [
-            `M ${e} ${t + n}`,
-            `V ${t + u}`,
-            `Q ${e} ${t} ${e + u} ${t}`,
-            `H ${e + l - u}`,
-            `Q ${e + l} ${t} ${e + l} ${t + u}`,
-            `V ${t + n}`,
+            `M ${x} ${y + clampedHeight}`,
+            `V ${y + cornerRadius}`,
+            `Q ${x} ${y} ${x + cornerRadius} ${y}`,
+            `H ${x + width - cornerRadius}`,
+            `Q ${x + width} ${y} ${x + width} ${y + cornerRadius}`,
+            `V ${y + clampedHeight}`,
             "Z",
           ].join(" ")
       : "";
   };
-function TrendChart({ points: e }) {
-  const [t, l] = hookRuntime.useState(null),
-    a = Math.max(...e.map((y) => y.visitors), 1),
-    n = Math.max(...e.map((y) => y.inquiries), 1),
-    i = Math.max(a, n) || 1,
-    s = hookRuntime.useMemo(
+function TrendChart({ points }) {
+  const [tooltip, setTooltip] = hookRuntime.useState(null),
+    maxVisitors = Math.max(...points.map((pt) => pt.visitors), 1),
+    maxInquiries = Math.max(...points.map((pt) => pt.inquiries), 1),
+    maxValue = Math.max(maxVisitors, maxInquiries) || 1,
+    computedPoints = hookRuntime.useMemo(
       () =>
-        e.map((y, h) => {
-          const m = CHART_PADDING + (h * (CHART_WIDTH - CHART_PADDING * 2)) / Math.max(e.length - 1, 1),
-            A = CHART_HEIGHT - CHART_PADDING - (y.visitors / i) * (CHART_HEIGHT - CHART_PADDING * 2),
-            N = CHART_HEIGHT - CHART_PADDING - (y.inquiries / i) * (CHART_HEIGHT - CHART_PADDING * 2);
-          return { ...y, x: m, visitorY: A, inquiryY: N };
+        points.map((pt, idx) => {
+          const x = CHART_PADDING + (idx * (CHART_WIDTH - CHART_PADDING * 2)) / Math.max(points.length - 1, 1),
+            visitorY = CHART_HEIGHT - CHART_PADDING - (pt.visitors / maxValue) * (CHART_HEIGHT - CHART_PADDING * 2),
+            inquiryY = CHART_HEIGHT - CHART_PADDING - (pt.inquiries / maxValue) * (CHART_HEIGHT - CHART_PADDING * 2);
+          return { ...pt, x, visitorY, inquiryY };
         }),
-      [e, i],
+      [points, maxValue],
     ),
-    f = s
-      .map((y, h) => `${h === 0 ? "M" : "L"} ${y.x} ${y.inquiryY}`)
+    inquiryLinePath = computedPoints
+      .map((pt, idx) => `${idx === 0 ? "M" : "L"} ${pt.x} ${pt.inquiryY}`)
       .join(" "),
-    r = (y, h) => {
-      var d;
-      const m =
-        (d = y.currentTarget.ownerSVGElement) == null
+    handleBarHover = (event, pt) => {
+      var svgEl;
+      const svgRect =
+        (svgEl = event.currentTarget.ownerSVGElement) == null
           ? void 0
-          : d.getBoundingClientRect();
-      if (!m) return;
-      const A = y.clientX - m.left + 14,
-        N = y.clientY - m.top - 14,
-        R = clamp(A, 12, Math.max(m.width - 208, 12)),
-        o = clamp(N, 12, Math.max(m.height - 104, 12));
-      l({ point: h, left: R, top: o });
+          : svgEl.getBoundingClientRect();
+      if (!svgRect) return;
+      const rawLeft = event.clientX - svgRect.left + 14,
+        rawTop = event.clientY - svgRect.top - 14,
+        clampedLeft = clamp(rawLeft, 12, Math.max(svgRect.width - 208, 12)),
+        clampedTop = clamp(rawTop, 12, Math.max(svgRect.height - 104, 12));
+      setTooltip({ point: pt, left: clampedLeft, top: clampedTop });
     };
-  if (!s.length)
+  if (!computedPoints.length)
     return jsxRuntime.jsxs("div", {
       className: "trend-chart trend-chart--empty",
       children: [
@@ -1238,7 +1244,7 @@ function TrendChart({ points: e }) {
         }),
       ],
     });
-  const b = t == null ? void 0 : t.point;
+  const hoveredPoint = tooltip == null ? void 0 : tooltip.point;
   return jsxRuntime.jsxs("div", {
     className: "trend-chart",
     children: [
@@ -1250,97 +1256,97 @@ function TrendChart({ points: e }) {
             className: "trend-chart__svg",
             role: "img",
             children: [
-              [0, 1, 2, 3, 4].map((y) => {
-                const h = CHART_PADDING + (y * (CHART_HEIGHT - CHART_PADDING * 2)) / 4;
+              [0, 1, 2, 3, 4].map((lineIdx) => {
+                const lineY = CHART_PADDING + (lineIdx * (CHART_HEIGHT - CHART_PADDING * 2)) / 4;
                 return jsxRuntime.jsx(
                   "line",
                   {
                     x1: CHART_PADDING,
-                    y1: h,
+                    y1: lineY,
                     x2: CHART_WIDTH - CHART_PADDING,
-                    y2: h,
+                    y2: lineY,
                     className: "trend-chart__grid",
                   },
-                  y,
+                  lineIdx,
                 );
               }),
-              s.map((y) => {
-                const h = y.x - TOOLTIP_WIDTH / 2,
-                  m = CHART_HEIGHT - CHART_PADDING - y.visitorY,
-                  A = buildRoundedRectPath(h, y.visitorY, TOOLTIP_WIDTH, m);
+              computedPoints.map((pt) => {
+                const barX = pt.x - TOOLTIP_WIDTH / 2,
+                  barHeight = CHART_HEIGHT - CHART_PADDING - pt.visitorY,
+                  barPath = buildRoundedRectPath(barX, pt.visitorY, TOOLTIP_WIDTH, barHeight);
                 return jsxRuntime.jsxs(
                   "g",
                   {
                     className: "trend-chart__bar-group",
-                    onMouseEnter: (N) => r(N, y),
-                    onMouseMove: (N) => r(N, y),
-                    onMouseLeave: () => l(null),
+                    onMouseEnter: (ev) => handleBarHover(ev, pt),
+                    onMouseMove: (ev) => handleBarHover(ev, pt),
+                    onMouseLeave: () => setTooltip(null),
                     children: [
-                      jsxRuntime.jsx("path", { d: A, className: "trend-chart__bar" }),
+                      jsxRuntime.jsx("path", { d: barPath, className: "trend-chart__bar" }),
                       jsxRuntime.jsx("rect", {
-                        x: h - 4,
-                        y: y.visitorY,
+                        x: barX - 4,
+                        y: pt.visitorY,
                         width: TOOLTIP_WIDTH + 8,
-                        height: m,
+                        height: barHeight,
                         fill: "transparent",
                         className: "trend-chart__bar-hitarea",
                       }),
                       jsxRuntime.jsx("text", {
-                        x: y.x,
+                        x: pt.x,
                         y: CHART_HEIGHT - 8,
                         textAnchor: "middle",
                         className: "trend-chart__label",
-                        children: y.label,
+                        children: pt.label,
                       }),
                     ],
                   },
-                  `${y.label}-bar`,
+                  `${pt.label}-bar`,
                 );
               }),
-              jsxRuntime.jsx("path", { d: f, className: "trend-chart__path" }),
-              s.map((y) =>
+              jsxRuntime.jsx("path", { d: inquiryLinePath, className: "trend-chart__path" }),
+              computedPoints.map((pt) =>
                 jsxRuntime.jsxs(
                   "g",
                   {
                     className: "trend-chart__point-group",
-                    onMouseEnter: (h) => r(h, y),
-                    onMouseMove: (h) => r(h, y),
-                    onMouseLeave: () => l(null),
+                    onMouseEnter: (ev) => handleBarHover(ev, pt),
+                    onMouseMove: (ev) => handleBarHover(ev, pt),
+                    onMouseLeave: () => setTooltip(null),
                     children: [
                       jsxRuntime.jsx("circle", {
-                        cx: y.x,
-                        cacheQaRecords: y.inquiryY,
+                        cx: pt.x,
+                        cy: pt.inquiryY,
                         r: "5",
                         className: "trend-chart__point",
                       }),
                       jsxRuntime.jsx("circle", {
-                        cx: y.x,
-                        cacheQaRecords: y.inquiryY,
+                        cx: pt.x,
+                        cy: pt.inquiryY,
                         r: "10",
                         fill: "transparent",
                       }),
                     ],
                   },
-                  y.label,
+                  pt.label,
                 ),
               ),
             ],
           }),
-          b && t
+          hoveredPoint && tooltip
             ? jsxRuntime.jsxs("div", {
                 className: "trend-chart__tooltip",
-                style: { left: t.left, top: t.top },
+                style: { left: tooltip.left, top: tooltip.top },
                 "aria-live": "polite",
                 children: [
                   jsxRuntime.jsx("span", {
                     className: "trend-chart__tooltip-date",
-                    children: b.dateLabel,
+                    children: hoveredPoint.dateLabel,
                   }),
                   jsxRuntime.jsxs("strong", {
-                    children: [b.visitors.toLocaleString(), " 접속자"],
+                    children: [hoveredPoint.visitors.toLocaleString(), " 접속자"],
                   }),
                   jsxRuntime.jsxs("span", {
-                    children: [b.inquiries.toLocaleString(), " 문의"],
+                    children: [hoveredPoint.inquiries.toLocaleString(), " 문의"],
                   }),
                 ],
               })
@@ -1372,9 +1378,9 @@ function TrendChart({ points: e }) {
     ],
   });
 }
-function DashboardView({ data: e }) {
-  const [t, l] = hookRuntime.useState(e.selectedRange),
-    a = DASHBOARD_SECTIONS[t];
+function DashboardView({ data }) {
+  const [selectedRange, setSelectedRange] = hookRuntime.useState(data.selectedRange),
+    currentSection = DASHBOARD_SECTIONS[selectedRange];
   return jsxRuntime.jsxs("div", {
     className: "dashboard-grid",
     children: [
@@ -1385,21 +1391,21 @@ function DashboardView({ data: e }) {
             title: "기간별 지표 현황",
             actions: jsxRuntime.jsx("div", {
               className: "dashboard-header-actions",
-              children: jsxRuntime.jsx(TimeRangeTabs, { value: t, onChange: l }),
+              children: jsxRuntime.jsx(TimeRangeTabs, { value: selectedRange, onChange: setSelectedRange }),
             }),
           }),
           jsxRuntime.jsx("div", {
             className: "metric-card-grid",
-            children: a.metrics.map((n) => jsxRuntime.jsx(MetricCard, { metric: n }, n.key)),
+            children: currentSection.metrics.map((metric) => jsxRuntime.jsx(MetricCard, { metric }, metric.key)),
           }),
-          jsxRuntime.jsx(TrendChart, { points: a.trend }),
+          jsxRuntime.jsx(TrendChart, { points: currentSection.trend }),
         ],
       }),
       jsxRuntime.jsxs("section", {
         className: "dashboard-side",
         children: [
-          jsxRuntime.jsx(KeywordList, { title: "질문 키워드", items: e.fixedKeywords }),
-          jsxRuntime.jsx(FeedbackRatio, { data: e.fixedFeedbackRatio }),
+          jsxRuntime.jsx(KeywordList, { title: "질문 키워드", items: data.fixedKeywords }),
+          jsxRuntime.jsx(FeedbackRatio, { data: data.fixedFeedbackRatio }),
         ],
       }),
     ],
@@ -1592,7 +1598,7 @@ const contentTypeOptions = [
     { label: "FAQ", value: "FAQ" },
   ],
   contentStatusLabels = { ACTIVE: "정상", FAILED: "실패" },
-  Qc = { fileName: "", path: "", type: "MANUAL" },
+  EMPTY_UPLOAD_FORM = { fileName: "", path: "", type: "MANUAL" },
   allowedFileExtensions = ".pdf,.docx,.txt,.md",
   messageDurationMs = 3e3,
   sortContentDocumentList = (e, t) => sortDescendingByTimestamp(e.updatedAt, t.updatedAt) || sortDescendingByTimestamp(e.createdAt, t.createdAt);
@@ -1611,7 +1617,7 @@ function ContentManagementView({ documents: e }) {
     v = useTimedMessage(messageDurationMs),
     g = useTimedMessage(messageDurationMs),
     [E, C] = hookRuntime.useState(""),
-    [T, D] = hookRuntime.useState(Qc),
+    [T, D] = hookRuntime.useState(EMPTY_UPLOAD_FORM),
     S = hookRuntime.useMemo(() => {
       const M = a.keyword.trim().toLowerCase();
       return s
@@ -1639,7 +1645,7 @@ function ContentManagementView({ documents: e }) {
     se = () => {
       (R("CREATE"),
         d(null),
-        D(Qc),
+        D(EMPTY_UPLOAD_FORM),
         C(""),
         g.clearMessage(),
         t.current && (t.current.value = ""),
@@ -1702,7 +1708,7 @@ function ContentManagementView({ documents: e }) {
         ),
           b(o),
           v.showMessage("문서가 수정되었습니다."));
-      (g.clearMessage(), x(), D(Qc));
+      (g.clearMessage(), x(), D(EMPTY_UPLOAD_FORM));
     },
     U = () => {
       _ &&
@@ -2028,7 +2034,7 @@ function ContentManagementView({ documents: e }) {
         ],
       }),
       y
-        ? jsxRuntime.jsxs(nl, {
+        ? jsxRuntime.jsxs(ModalDialog, {
             title: N === "EDIT" ? "문서 수정 업로드" : "문서 업로드",
             ariaLabel: N === "EDIT" ? "문서 수정 업로드" : "문서 업로드",
             onClose: x,
@@ -2111,7 +2117,7 @@ function ContentManagementView({ documents: e }) {
           })
         : null,
       m
-        ? jsxRuntime.jsx(nl, {
+        ? jsxRuntime.jsx(ModalDialog, {
             title: "문서 삭제 확인",
             ariaLabel: "문서 삭제 확인",
             onClose: () => A(!1),
@@ -2378,46 +2384,46 @@ const getCurrentTimestamp = () =>
       lastMatchedAt: null,
     },
   ],
-  Il = (e) =>
-    e
+  normalizeForSearch = (text) =>
+    text
       .toLowerCase()
       .trim()
       .replace(/\s+/g, "")
       .replace(/[^0-9a-z가-힣]/gi, ""),
-  iy = (e, t) => {
-    const l = Il(e),
-      a = Il(t);
-    if (!l && !a) return 1;
-    if (!l || !a) return 0;
-    if (l === a) return 1;
-    const n = Array.from({ length: l.length + 1 }, (i, s) =>
-      Array.from({ length: a.length + 1 }, (f, r) =>
-        s === 0 ? r : r === 0 ? s : 0,
+  calculateTextSimilarity = (textA, textB) => {
+    const a = normalizeForSearch(textA),
+      b = normalizeForSearch(textB);
+    if (!a && !b) return 1;
+    if (!a || !b) return 0;
+    if (a === b) return 1;
+    const matrix = Array.from({ length: a.length + 1 }, (_, i) =>
+      Array.from({ length: b.length + 1 }, (__, j) =>
+        i === 0 ? j : j === 0 ? i : 0,
       ),
     );
-    for (let i = 1; i <= l.length; i += 1)
-      for (let s = 1; s <= a.length; s += 1) {
-        const f = l[i - 1] === a[s - 1] ? 0 : 1;
-        n[i][s] = Math.min(
-          n[i - 1][s] + 1,
-          n[i][s - 1] + 1,
-          n[i - 1][s - 1] + f,
+    for (let i = 1; i <= a.length; i += 1)
+      for (let j = 1; j <= b.length; j += 1) {
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j - 1] + cost,
         );
       }
-    return 1 - n[l.length][a.length] / Math.max(l.length, a.length);
+    return 1 - matrix[a.length][b.length] / Math.max(a.length, b.length);
   },
-  findCacheQaDuplicate = (e, t, l) => {
-    let n = null;
-    for (const u of e) {
-      if (l && u.id === l) continue;
-      const i = Math.max(
-        iy(u.question, t),
-        Il(u.question).includes(Il(t)) ? 0.92 : 0,
-        Il(t).includes(Il(u.question)) ? 0.92 : 0,
+  findCacheQaDuplicate = (list, question, excludeId) => {
+    let bestMatch = null;
+    for (const item of list) {
+      if (excludeId && item.id === excludeId) continue;
+      const similarity = Math.max(
+        calculateTextSimilarity(item.question, question),
+        normalizeForSearch(item.question).includes(normalizeForSearch(question)) ? 0.92 : 0,
+        normalizeForSearch(question).includes(normalizeForSearch(item.question)) ? 0.92 : 0,
       );
-      i >= 0.85 && (!n || i > n.score) && (n = { item: u, score: i });
+      similarity >= 0.85 && (!bestMatch || similarity > bestMatch.score) && (bestMatch = { item, score: similarity });
     }
-    return n;
+    return bestMatch;
   },
   createCacheQaEntry = async (e, t = "관리자") => {
     const l = getCurrentTimestamp();
@@ -2876,7 +2882,7 @@ function CacheAnswerManagementView({ items: e }) {
         ],
       }),
       y
-        ? jsxRuntime.jsx(nl, {
+        ? jsxRuntime.jsx(ModalDialog, {
             title: m === "EDIT" ? "캐시 답변 수정" : "캐시 답변 등록",
             ariaLabel: m === "EDIT" ? "캐시 답변 수정" : "캐시 답변 등록",
             onClose: Q,
@@ -2982,7 +2988,7 @@ function CacheAnswerManagementView({ items: e }) {
           })
         : null,
       E
-        ? jsxRuntime.jsx(nl, {
+        ? jsxRuntime.jsx(ModalDialog, {
             title: "캐시 답변 삭제 확인",
             ariaLabel: "캐시 답변 삭제 확인",
             onClose: () => C(!1),
@@ -3707,64 +3713,64 @@ const CURRENT_ACCOUNT_ID = "chat1004",
     DEACTIVATE: "권한 비활성화",
     UNLOCK: "잠금 해제",
   },
-  jy = 3e3;
-function AccountPermissionManagementView({ accounts: e }) {
-  const [t, l] = hookRuntime.useState(e),
-    [a, n] = hookRuntime.useState(null),
-    [u, i] = hookRuntime.useState(null),
-    [s, f] = hookRuntime.useState(!1),
-    [r, b] = hookRuntime.useState(""),
-    [y, h] = hookRuntime.useState(""),
-    [m, A] = hookRuntime.useState(null),
-    N = useTimedMessage(jy),
-    R = hookRuntime.useMemo(
+  ACCOUNT_MESSAGE_DURATION_MS = 3e3;
+function AccountPermissionManagementView({ accounts: initialAccounts }) {
+  const [accountList, setAccountList] = hookRuntime.useState(initialAccounts),
+    [selectedAccountId, setSelectedAccountId] = hookRuntime.useState(null),
+    [pendingAction, setPendingAction] = hookRuntime.useState(null),
+    [isAddModalOpen, setIsAddModalOpen] = hookRuntime.useState(!1),
+    [addReason, setAddReason] = hookRuntime.useState(""),
+    [candidateSearch, setCandidateSearch] = hookRuntime.useState(""),
+    [selectedCandidate, setSelectedCandidate] = hookRuntime.useState(null),
+    timedMessage = useTimedMessage(ACCOUNT_MESSAGE_DURATION_MS),
+    accountStats = hookRuntime.useMemo(
       () => ({
-        total: t.filter((S) => S.status === "ACTIVE").length,
-        masters: t.filter((S) => S.role === "MASTER" && S.status === "ACTIVE")
+        total: accountList.filter((acc) => acc.status === "ACTIVE").length,
+        masters: accountList.filter((acc) => acc.role === "MASTER" && acc.status === "ACTIVE")
           .length,
-        operators: t.filter(
-          (S) => S.role === "OPERATOR" && S.status === "ACTIVE",
+        operators: accountList.filter(
+          (acc) => acc.role === "OPERATOR" && acc.status === "ACTIVE",
         ).length,
-        inactive: t.filter((S) => S.status !== "ACTIVE").length,
+        inactive: accountList.filter((acc) => acc.status !== "ACTIVE").length,
       }),
-      [t],
+      [accountList],
     ),
-    o = t.find((S) => S.id === a) ?? null,
-    d = hookRuntime.useMemo(() => {
-      const S = y.trim().toLowerCase();
-      return S
+    selectedAccount = accountList.find((acc) => acc.id === selectedAccountId) ?? null,
+    filteredCandidates = hookRuntime.useMemo(() => {
+      const q = candidateSearch.trim().toLowerCase();
+      return q
         ? candidateAccounts.filter(
-            (_) =>
-              _.name.toLowerCase().includes(S) ||
-              _.id.toLowerCase().includes(S) ||
-              _.complexCode.toLowerCase().includes(S),
+            (c) =>
+              c.name.toLowerCase().includes(q) ||
+              c.id.toLowerCase().includes(q) ||
+              c.complexCode.toLowerCase().includes(q),
           )
         : candidateAccounts;
-    }, [y]),
-    v = (S, _) => {
-      (l((te) => te.map((De) => (De.id === S ? { ...De, status: _ } : De))),
-        n(S));
+    }, [candidateSearch]),
+    updateAccountStatus = (accountId, newStatus) => {
+      (setAccountList((prev) => prev.map((acc) => (acc.id === accountId ? { ...acc, status: newStatus } : acc))),
+        setSelectedAccountId(accountId));
     },
-    g = () => {
-      if (!u) return;
-      const { type: S, accountId: _ } = u;
-      (S === "ACTIVATE"
-        ? (v(_, "ACTIVE"), N.showMessage("관리자 권한이 복구되었습니다."))
-        : S === "DEACTIVATE"
-          ? (v(_, "INACTIVE"),
-            N.showMessage("관리자 권한이 비활성화되었습니다."))
-          : S === "UNLOCK" &&
-            (v(_, "ACTIVE"), N.showMessage("계정 잠금이 해제되었습니다.")),
-        i(null));
+    confirmAction = () => {
+      if (!pendingAction) return;
+      const { type: actionType, accountId } = pendingAction;
+      (actionType === "ACTIVATE"
+        ? (updateAccountStatus(accountId, "ACTIVE"), timedMessage.showMessage("관리자 권한이 복구되었습니다."))
+        : actionType === "DEACTIVATE"
+          ? (updateAccountStatus(accountId, "INACTIVE"),
+            timedMessage.showMessage("관리자 권한이 비활성화되었습니다."))
+          : actionType === "UNLOCK" &&
+            (updateAccountStatus(accountId, "ACTIVE"), timedMessage.showMessage("계정 잠금이 해제되었습니다.")),
+        setPendingAction(null));
     },
-    E = () => {
-      (f(!1), b(""), h(""), A(null));
+    closeAddModal = () => {
+      (setIsAddModalOpen(!1), setAddReason(""), setCandidateSearch(""), setSelectedCandidate(null));
     },
-    C = () => {
-      if (!m) return;
-      const S = {
-        id: m.id,
-        name: m.name,
+    confirmAddAccount = () => {
+      if (!selectedCandidate) return;
+      const newAccount = {
+        id: selectedCandidate.id,
+        name: selectedCandidate.name,
         role: "OPERATOR",
         status: "ACTIVE",
         registeredAt: "2026-04-02",
@@ -3772,26 +3778,26 @@ function AccountPermissionManagementView({ accounts: e }) {
         loginHistory: [],
         lockHistory: [],
       };
-      (l((_) => [..._, S]), E(), N.showMessage("관리자가 추가되었습니다."));
+      (setAccountList((prev) => [...prev, newAccount]), closeAddModal(), timedMessage.showMessage("관리자가 추가되었습니다."));
     },
-    T = (S) => S === CURRENT_ACCOUNT_ID,
-    D = [
-      { label: "전체 활성", value: `${R.total}명` },
-      { label: "MASTER", value: `${R.masters}명` },
-      { label: "OPERATOR", value: `${R.operators}명` },
-      { label: "비활성·잠금", value: `${R.inactive}명` },
+    isCurrentUser = (id) => id === CURRENT_ACCOUNT_ID,
+    statItems = [
+      { label: "전체 활성", value: `${accountStats.total}명` },
+      { label: "MASTER", value: `${accountStats.masters}명` },
+      { label: "OPERATOR", value: `${accountStats.operators}명` },
+      { label: "비활성·잠금", value: `${accountStats.inactive}명` },
     ];
   return jsxRuntime.jsxs("div", {
     className: "accounts-layout",
     children: [
       jsxRuntime.jsx(ToastStack, {
-        items: N.message
-          ? [{ key: "accounts-success", tone: "success", message: N.message }]
+        items: timedMessage.message
+          ? [{ key: "accounts-success", tone: "success", message: timedMessage.message }]
           : [],
       }),
       jsxRuntime.jsx("div", {
         className: "accounts-stat-grid",
-        children: D.map((S) =>
+        children: statItems.map((item) =>
           jsxRuntime.jsxs(
             "div",
             {
@@ -3799,15 +3805,15 @@ function AccountPermissionManagementView({ accounts: e }) {
               children: [
                 jsxRuntime.jsx("p", {
                   className: "metric-card__label",
-                  children: S.label,
+                  children: item.label,
                 }),
                 jsxRuntime.jsx("p", {
                   className: "metric-card__value",
-                  children: S.value,
+                  children: item.value,
                 }),
               ],
             },
-            S.label,
+            item.label,
           ),
         ),
       }),
@@ -3822,7 +3828,7 @@ function AccountPermissionManagementView({ accounts: e }) {
                 actions: jsxRuntime.jsx("button", {
                   type: "button",
                   className: "primary-button",
-                  onClick: () => f(!0),
+                  onClick: () => setIsAddModalOpen(!0),
                   children: "계정 추가",
                 }),
                 className: "panel__header panel__header--compact",
@@ -3844,43 +3850,43 @@ function AccountPermissionManagementView({ accounts: e }) {
                       }),
                     }),
                     jsxRuntime.jsx("tbody", {
-                      children: t.map((S) =>
+                      children: accountList.map((acc) =>
                         jsxRuntime.jsxs(
                           "tr",
                           {
-                            className: S.id === a ? "is-selected" : "",
-                            onClick: () => n(S.id),
+                            className: acc.id === selectedAccountId ? "is-selected" : "",
+                            onClick: () => setSelectedAccountId(acc.id),
                             children: [
                               jsxRuntime.jsxs("td", {
                                 children: [
                                   jsxRuntime.jsx("div", {
                                     className: "content-table__title",
-                                    children: S.name,
+                                    children: acc.name,
                                   }),
-                                  T(S.id) &&
+                                  isCurrentUser(acc.id) &&
                                     jsxRuntime.jsx("div", {
                                       className: "content-table__sub",
                                       children: "본인",
                                     }),
                                 ],
                               }),
-                              jsxRuntime.jsx("td", { children: S.id }),
+                              jsxRuntime.jsx("td", { children: acc.id }),
                               jsxRuntime.jsx("td", {
                                 children: jsxRuntime.jsx("span", {
-                                  className: `status-badge ${S.role === "MASTER" ? "status-badge--active" : "status-badge--processing"}`,
-                                  children: accountRoleLabels[S.role],
+                                  className: `status-badge ${acc.role === "MASTER" ? "status-badge--active" : "status-badge--processing"}`,
+                                  children: accountRoleLabels[acc.role],
                                 }),
                               }),
                               jsxRuntime.jsx("td", {
                                 children: jsxRuntime.jsx("span", {
-                                  className: `status-badge status-badge--${S.status.toLowerCase()}`,
-                                  children: accountStatusLabels[S.status],
+                                  className: `status-badge status-badge--${acc.status.toLowerCase()}`,
+                                  children: accountStatusLabels[acc.status],
                                 }),
                               }),
-                              jsxRuntime.jsx("td", { children: S.lastLoginAt ?? "-" }),
+                              jsxRuntime.jsx("td", { children: acc.lastLoginAt ?? "-" }),
                             ],
                           },
-                          S.id,
+                          acc.id,
                         ),
                       ),
                     }),
@@ -3892,14 +3898,14 @@ function AccountPermissionManagementView({ accounts: e }) {
           jsxRuntime.jsx(DetailFrame, {
             className: "accounts-detail-card",
             title: "계정 상세",
-            actions: o
+            actions: selectedAccount
               ? jsxRuntime.jsx("span", {
-                  className: `status-badge status-badge--${o.status.toLowerCase()}`,
-                  children: accountStatusLabels[o.status],
+                  className: `status-badge status-badge--${selectedAccount.status.toLowerCase()}`,
+                  children: accountStatusLabels[selectedAccount.status],
                 })
               : null,
             children:
-              o === null
+              selectedAccount === null
                 ? jsxRuntime.jsx("div", {
                     className: "content-empty content-empty--detail",
                     children: "관리자를 선택하면 상세 정보가 표시됩니다.",
@@ -3913,18 +3919,18 @@ function AccountPermissionManagementView({ accounts: e }) {
                           children: [
                             jsxRuntime.jsx("span", {
                               className: "accounts-detail-identity__name",
-                              children: o.name,
+                              children: selectedAccount.name,
                             }),
                             jsxRuntime.jsxs("div", {
                               className: "accounts-detail-identity__meta",
                               children: [
                                 jsxRuntime.jsx("span", {
                                   className: "accounts-detail-identity__id",
-                                  children: o.id,
+                                  children: selectedAccount.id,
                                 }),
                                 jsxRuntime.jsx("span", {
                                   className: "accounts-detail-identity__role",
-                                  children: accountRoleLabels[o.role],
+                                  children: accountRoleLabels[selectedAccount.role],
                                 }),
                               ],
                             }),
@@ -3940,18 +3946,18 @@ function AccountPermissionManagementView({ accounts: e }) {
                           jsxRuntime.jsxs("div", {
                             children: [
                               jsxRuntime.jsx("dt", { children: "등록일" }),
-                              jsxRuntime.jsx("dd", { children: o.registeredAt }),
+                              jsxRuntime.jsx("dd", { children: selectedAccount.registeredAt }),
                             ],
                           }),
                           jsxRuntime.jsxs("div", {
                             children: [
                               jsxRuntime.jsx("dt", { children: "최종 로그인" }),
-                              jsxRuntime.jsx("dd", { children: o.lastLoginAt ?? "-" }),
+                              jsxRuntime.jsx("dd", { children: selectedAccount.lastLoginAt ?? "-" }),
                             ],
                           }),
                         ],
                       }),
-                      T(o.id)
+                      isCurrentUser(selectedAccount.id)
                         ? jsxRuntime.jsx("p", {
                             className: "accounts-self-notice",
                             children:
@@ -3960,39 +3966,39 @@ function AccountPermissionManagementView({ accounts: e }) {
                         : jsxRuntime.jsxs("div", {
                             className: "accounts-action-row",
                             children: [
-                              o.status === "INACTIVE" &&
+                              selectedAccount.status === "INACTIVE" &&
                                 jsxRuntime.jsx("button", {
                                   type: "button",
                                   className: "primary-button",
                                   onClick: () =>
-                                    i({
+                                    setPendingAction({
                                       type: "ACTIVATE",
-                                      accountId: o.id,
+                                      accountId: selectedAccount.id,
                                       reason: "",
                                     }),
                                   children: "권한 복구",
                                 }),
-                              o.status === "ACTIVE" &&
-                                o.role === "OPERATOR" &&
+                              selectedAccount.status === "ACTIVE" &&
+                                selectedAccount.role === "OPERATOR" &&
                                 jsxRuntime.jsx("button", {
                                   type: "button",
                                   className: "danger-button",
                                   onClick: () =>
-                                    i({
+                                    setPendingAction({
                                       type: "DEACTIVATE",
-                                      accountId: o.id,
+                                      accountId: selectedAccount.id,
                                       reason: "",
                                     }),
                                   children: "권한 비활성화",
                                 }),
-                              o.status === "LOCKED" &&
+                              selectedAccount.status === "LOCKED" &&
                                 jsxRuntime.jsx("button", {
                                   type: "button",
                                   className: "primary-button",
                                   onClick: () =>
-                                    i({
+                                    setPendingAction({
                                       type: "UNLOCK",
-                                      accountId: o.id,
+                                      accountId: selectedAccount.id,
                                       reason: "",
                                     }),
                                   children: "잠금 해제",
@@ -4003,22 +4009,22 @@ function AccountPermissionManagementView({ accounts: e }) {
                         className: "accounts-history",
                         children: [
                           jsxRuntime.jsx("h4", { children: "로그인 이력" }),
-                          o.loginHistory.length === 0
+                          selectedAccount.loginHistory.length === 0
                             ? jsxRuntime.jsx("p", {
                                 className: "accounts-history-empty",
                                 children: "로그인 이력이 없습니다.",
                               })
                             : jsxRuntime.jsx("ul", {
                                 className: "accounts-history-list",
-                                children: o.loginHistory.map((S) =>
+                                children: selectedAccount.loginHistory.map((entry) =>
                                   jsxRuntime.jsxs(
                                     "li",
                                     {
                                       children: [
                                         jsxRuntime.jsx("strong", {
-                                          children: S.occurredAt,
+                                          children: entry.occurredAt,
                                         }),
-                                        S.success
+                                        entry.success
                                           ? jsxRuntime.jsx("span", {
                                               className:
                                                 "accounts-login-success",
@@ -4030,11 +4036,11 @@ function AccountPermissionManagementView({ accounts: e }) {
                                             }),
                                         jsxRuntime.jsx("span", {
                                           className: "accounts-history-ip",
-                                          children: S.ip,
+                                          children: entry.ip,
                                         }),
                                       ],
                                     },
-                                    S.id,
+                                    entry.id,
                                   ),
                                 ),
                               }),
@@ -4044,38 +4050,38 @@ function AccountPermissionManagementView({ accounts: e }) {
                         className: "accounts-history",
                         children: [
                           jsxRuntime.jsx("h4", { children: "잠금·해제 이력" }),
-                          o.lockHistory.length === 0
+                          selectedAccount.lockHistory.length === 0
                             ? jsxRuntime.jsx("p", {
                                 className: "accounts-history-empty",
                                 children: "잠금·해제 이력이 없습니다.",
                               })
                             : jsxRuntime.jsx("ul", {
                                 className: "accounts-history-list",
-                                children: o.lockHistory.map((S) =>
+                                children: selectedAccount.lockHistory.map((entry) =>
                                   jsxRuntime.jsxs(
                                     "li",
                                     {
                                       children: [
                                         jsxRuntime.jsx("strong", {
-                                          children: S.occurredAt,
+                                          children: entry.occurredAt,
                                         }),
                                         jsxRuntime.jsx("span", {
                                           className:
-                                            S.type === "LOCKED"
+                                            entry.type === "LOCKED"
                                               ? "accounts-history-status--lock"
                                               : "accounts-history-status--unlock",
                                           children:
-                                            S.type === "LOCKED"
+                                            entry.type === "LOCKED"
                                               ? "잠금"
                                               : "해제",
                                         }),
                                         jsxRuntime.jsxs("p", {
                                           className: "accounts-history-sub",
-                                          children: [S.reason, " · ", S.actor],
+                                          children: [entry.reason, " · ", entry.actor],
                                         }),
                                       ],
                                     },
-                                    S.id,
+                                    entry.id,
                                   ),
                                 ),
                               }),
@@ -4086,26 +4092,26 @@ function AccountPermissionManagementView({ accounts: e }) {
           }),
         ],
       }),
-      u &&
-        jsxRuntime.jsx(nl, {
-          title: accountActionLabels[u.type],
-          ariaLabel: accountActionLabels[u.type],
-          onClose: () => i(null),
+      pendingAction &&
+        jsxRuntime.jsx(ModalDialog, {
+          title: accountActionLabels[pendingAction.type],
+          ariaLabel: accountActionLabels[pendingAction.type],
+          onClose: () => setPendingAction(null),
           size: "sm",
           footer: jsxRuntime.jsxs(jsxRuntime.Fragment, {
             children: [
               jsxRuntime.jsx("button", {
                 type: "button",
                 className: "secondary-button",
-                onClick: () => i(null),
+                onClick: () => setPendingAction(null),
                 children: "취소",
               }),
               jsxRuntime.jsx("button", {
                 type: "button",
                 className:
-                  u.type === "DEACTIVATE" ? "danger-button" : "primary-button",
-                disabled: !u.reason.trim(),
-                onClick: g,
+                  pendingAction.type === "DEACTIVATE" ? "danger-button" : "primary-button",
+                disabled: !pendingAction.reason.trim(),
+                onClick: confirmAction,
                 children: "확인",
               }),
             ],
@@ -4120,32 +4126,32 @@ function AccountPermissionManagementView({ accounts: e }) {
               jsxRuntime.jsx("textarea", {
                 className: "field__input knowledge-textarea",
                 rows: 3,
-                value: u.reason,
+                value: pendingAction.reason,
                 placeholder: "사유를 입력해 주세요.",
-                onChange: (S) => i({ ...u, reason: S.target.value }),
+                onChange: (e) => setPendingAction({ ...pendingAction, reason: e.target.value }),
               }),
             ],
           }),
         }),
-      s &&
-        jsxRuntime.jsxs(nl, {
+      isAddModalOpen &&
+        jsxRuntime.jsxs(ModalDialog, {
           title: "계정 추가",
           ariaLabel: "계정 추가",
-          onClose: E,
+          onClose: closeAddModal,
           size: "lg",
           footer: jsxRuntime.jsxs(jsxRuntime.Fragment, {
             children: [
               jsxRuntime.jsx("button", {
                 type: "button",
                 className: "secondary-button",
-                onClick: E,
+                onClick: closeAddModal,
                 children: "취소",
               }),
               jsxRuntime.jsx("button", {
                 type: "button",
                 className: "primary-button",
-                disabled: !m || !r.trim(),
-                onClick: C,
+                disabled: !selectedCandidate || !addReason.trim(),
+                onClick: confirmAddAccount,
                 children: "확인",
               }),
             ],
@@ -4160,40 +4166,40 @@ function AccountPermissionManagementView({ accounts: e }) {
                 }),
                 jsxRuntime.jsx("input", {
                   className: "field__input",
-                  value: y,
+                  value: candidateSearch,
                   placeholder: "검색어 입력",
-                  onChange: (S) => h(S.target.value),
+                  onChange: (e) => setCandidateSearch(e.target.value),
                 }),
               ],
             }),
             jsxRuntime.jsx("ul", {
               className: "user-candidate-list",
               children:
-                d.length === 0
+                filteredCandidates.length === 0
                   ? jsxRuntime.jsx("li", {
                       className: "user-candidate-empty",
                       children: "검색 결과가 없습니다.",
                     })
-                  : d.map((S) =>
+                  : filteredCandidates.map((candidate) =>
                       jsxRuntime.jsx(
                         "li",
                         {
                           children: jsxRuntime.jsxs("button", {
                             type: "button",
-                            className: `user-candidate-item${(m == null ? void 0 : m.id) === S.id ? " is-selected" : ""}`,
-                            onClick: () => A(S),
+                            className: `user-candidate-item${(selectedCandidate == null ? void 0 : selectedCandidate.id) === candidate.id ? " is-selected" : ""}`,
+                            onClick: () => setSelectedCandidate(candidate),
                             children: [
                               jsxRuntime.jsxs("span", {
-                                children: [S.name, " (", S.id, ")"],
+                                children: [candidate.name, " (", candidate.id, ")"],
                               }),
                               jsxRuntime.jsx("span", {
                                 className: "user-candidate-code",
-                                children: S.complexCode,
+                                children: candidate.complexCode,
                               }),
                             ],
                           }),
                         },
-                        S.id,
+                        candidate.id,
                       ),
                     ),
             }),
@@ -4465,7 +4471,7 @@ function Sidebar({ currentPath: e, onNavigate: t, onLogout: l }) {
         ],
       }),
       a
-        ? jsxRuntime.jsx(nl, {
+        ? jsxRuntime.jsx(ModalDialog, {
             title: "로그아웃",
             ariaLabel: "로그아웃 확인",
             onClose: () => n(!1),
@@ -4527,7 +4533,7 @@ function DashboardShell({ currentPath: e, onNavigate: t, onLogout: l }) {
   (hookRuntime.useEffect(() => {
     let r = !0;
     return (
-      Promise.all([loadFeedbackItems(), loadAccountData(), my()]).then(([b, y, h]) => {
+      Promise.all([loadFeedbackItems(), loadAccountData(), loadKnowledgeDocuments()]).then(([b, y, h]) => {
         r &&
           s({
             feedbacks: b,
